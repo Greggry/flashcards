@@ -1,0 +1,78 @@
+html {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  background-color: #0a0908;
+  color: #f0f0f0;
+}
+
+.main-element {
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  width: 18rem;
+  height: 24rem;
+  background-color: #370096;
+  border: 2px solid #f0f0f0;
+  margin: 10px;
+  word-break: break-word;
+  padding: 10px;
+  cursor: pointer;
+}
+.card .card-title {
+  font-size: 3rem;
+  font-weight: bold;
+}
+.card .card-example {
+  font-weight: bold;
+}
+
+.popup-window {
+  /* should take up almost the whole window */
+  background-color: #f0f0f0;
+  /*height: 300px;
+  width: 300px;*/
+  width: 60rem;
+  height: 50rem;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  text-align: center;
+  color: #0a0908;
+  font-size: 2rem;
+  border-radius: 5px;
+  opacity: 0.97;
+}
+
+.open-menu-btn,
+.close-menu-btn {
+  width: 50px;
+  height: 50px;
+}
+
+.blurred {
+  filter: blur(8px);
+}
+
+.hidden {
+  display: none;
+}
+
+/*# sourceMappingURL=main.css.map */
