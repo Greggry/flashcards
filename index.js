@@ -1,9 +1,5 @@
 'use strict';
 
-// base class ElementCreator with newElement()
-// class WindowMounterr which inherits from base
-// class Cardset which works with cards
-
 class DomMaker {
   constructor() {
     // make the new mainElement which will be the parent of everything
@@ -19,7 +15,6 @@ class DomMaker {
     this.addButton = this.newElement('button', 'add a thing!', {
       class: 'options-add-btn',
     });
-
     this.modifyButton = this.newElement('button', 'modify button', {
       class: 'options-modify-btn',
     });
@@ -30,21 +25,32 @@ class DomMaker {
       {}
     );
 
-    this.menu = this.newPopup(this.options, false);
-
-    this.openMenuBtn = this.newElement('button', 'menu', {
-      class: 'open-menu-btn',
+    this.sidePane = this.newElement('div', ['<h1>options</h1>', this.options], {
+      class: 'side-pane',
       parentElement: this.mainElement,
     });
-    this.closeMenuBtn = this.newElement('button', 'close', {
-      class: 'close-menu-btn',
-      parentElement: this.menu,
+
+    this.settings = this.newPopup('these are settings', false);
+
+    this.openSettingsBtn = this.newElement('button', 'settings', {
+      class: 'open-settings-btn',
+      parentElement: this.sidePane,
+    });
+    this.closeSettingsBtn = this.newElement('button', 'close', {
+      class: 'close-settings-btn',
+      parentElement: this.settings,
     });
 
-    this.openMenuBtn.addEventListener('click', this.toggleMenu.bind(this));
-    this.closeMenuBtn.addEventListener('click', this.toggleMenu.bind(this));
+    this.openSettingsBtn.addEventListener(
+      'click',
+      this.toggleSettings.bind(this)
+    );
+    this.closeSettingsBtn.addEventListener(
+      'click',
+      this.toggleSettings.bind(this)
+    );
 
-    this.menuShown = false;
+    this.settingsShown = false;
   }
 
   appendElement(automount, parent, element) {
@@ -183,50 +189,46 @@ class DomMaker {
     return popup;
   }
 
-  toggleMenu() {
-    if (!this.menuShown) {
-      // blur and disable the rest this.mainElement
-      // this points to the button that called the function
-      // BUG the background doesn't get disabled
-      this.mainElement.disabled = true;
+  toggleSettings() {
+    if (!this.settingsShown) {
+      // add blur, disable
+      this.toggleDisabledOnChildren('.main-element');
       this.mainElement.classList.add('blurred');
 
-      // append menu this.menu
-      document.body.appendChild(this.menu);
+      // append this.settings
+      document.body.appendChild(this.settings);
     } else {
-      // remove menu
-      document.body.removeChild(this.menu);
+      // remove settings
+      document.body.removeChild(this.settings);
 
-      // remove blur and disability
-      this.mainElement.disabled = false;
+      // remove blur and enable elements back
+      this.toggleDisabledOnChildren('.main-element');
       this.mainElement.classList.remove('blurred');
     }
 
-    this.menuShown = !this.menuShown;
+    this.settingsShown = !this.settingsShown;
+  }
+
+  toggleDisabledOnChildren(parentSelector) {
+    const childrenArray = document.querySelectorAll(`${parentSelector} *`);
+
+    for (let i = 0; i < childrenArray.length; i++) {
+      childrenArray[i].disabled = !childrenArray[i].disabled;
+    }
   }
 }
 
-const creator = new DomMaker();
+const maker = new DomMaker();
 
-const card1 = creator.newCard(
+const card1 = maker.newCard(
   'word',
   'this is an example setence',
   'this is the definition of the word',
   true
 );
 
-const x = creator.newElement('h1', 'hello', {});
-const y = creator.newElement('h2', 'more content', {});
-
-creator.newElement(
-  'div',
-  {
-    x,
-    y,
-  },
-  {}
-);
-
 // TODO
-// link menu to some button or something
-// menu - add, modify, delete notes
+// settings
+// a side pane on the left with options
+// side pane - add modify delete etc
+// the cards are the only keyboard unfriendly element

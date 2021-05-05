@@ -11,13 +11,41 @@ html {
 
 body {
   margin: 0;
-  background-color: #0a0908;
+  background-color: #1e1b19;
   color: #f0f0f0;
 }
 
 .main-element {
   display: flex;
   justify-content: center;
+  width: 100vw;
+  height: 100vh;
+}
+.main-element .side-pane {
+  width: 20rem;
+  height: 100vh;
+  background-color: #161412;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 15px;
+  text-align: center;
+}
+.main-element .side-pane h1 {
+  font-size: 3rem;
+}
+.main-element .side-pane button {
+  background-color: #1e1b19;
+  color: #f0f0f0;
+  border: 2px solid #f0f0f0;
+  width: 90%;
+  padding: 5px 10px;
+  margin: 10px 0;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.main-element .side-pane button:disabled {
+  cursor: default;
 }
 
 .card {
@@ -45,34 +73,31 @@ body {
 .popup-window {
   /* should take up almost the whole window */
   background-color: #f0f0f0;
-  /*height: 300px;
-  width: 300px;*/
-  width: 60rem;
-  height: 50rem;
+  width: 60%;
+  height: 50%;
+  overflow: scroll;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 20px;
   text-align: center;
-  color: #0a0908;
+  color: #1e1b19;
   font-size: 2rem;
   border-radius: 5px;
   opacity: 0.97;
 }
-
-.open-menu-btn,
-.close-menu-btn {
-  width: 50px;
+.popup-window .close-settings-btn {
+  display: block;
+  cursor: pointer;
+  width: 80%;
   height: 50px;
+  margin: 25px auto;
+  font-size: 2rem;
 }
 
 .blurred {
   filter: blur(8px);
-}
-
-.hidden {
-  display: none;
 }
 
 /*# sourceMappingURL=main.css.map */
