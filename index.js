@@ -10,10 +10,11 @@ class DomMaker {
     });
 
     this.cardList = [];
-    this.popupList = [];
+    this.modalList = [];
 
     this.addButton = this.newElement('button', 'add a thing!', {
       class: 'options-add-btn',
+      click: this.newCardModal.bind(this),
     });
     this.modifyButton = this.newElement('button', 'modify button', {
       class: 'options-modify-btn',
@@ -30,7 +31,7 @@ class DomMaker {
       parentElement: this.mainElement,
     });
 
-    this.settings = this.newPopup('these are settings', false);
+    this.settings = this.newModal('these are settings', false);
 
     this.openSettingsBtn = this.newElement('button', 'settings', {
       class: 'open-settings-btn',
@@ -74,7 +75,7 @@ class DomMaker {
     const element = document.createElement(elementType);
 
     // IIFE recursive function lol
-    (function recursiveCheck(content, layer = 0, maxLayer = 3) {
+    (function recursiveCheckAssignContent(content, layer = 0, maxLayer = 3) {
       if (layer >= maxLayer) return false;
       if (content) {
         if (typeof content === 'string')
@@ -92,12 +93,12 @@ class DomMaker {
           const keys = Object.keys(content);
 
           for (let i = 0; i < keys.length; i++)
-            recursiveCheck(content[keys[i]], layer++); // check inside the object
+            recursiveCheckAssignContent(content[keys[i]], layer++); // check inside the object
         } else if (Array.isArray(content)) {
           // run for each element
 
           for (let i = 0; i < keys.length; i++)
-            recursiveCheck(content[keys[i]], layer++); // check inside the array
+            recursiveCheckAssignContent(content[keys[i]], layer++); // check inside the array
         }
       }
     })(content, 0, 3);
@@ -128,6 +129,9 @@ class DomMaker {
 
     if (propertiesObj.hasOwnProperty('parentElement'))
       this.appendElement(false, propertiesObj.parentElement, element);
+
+    if (propertiesObj.hasOwnProperty('click'))
+      element.addEventListener('click', propertiesObj['click']);
 
     return element;
   }
@@ -177,16 +181,16 @@ class DomMaker {
     return card;
   }
 
-  newPopup(contents, automount, parent) {
-    const popup = this.newElement('div', contents, {
-      class: 'popup-window',
+  newModal(contents, automount, parent) {
+    const modal = this.newElement('div', contents, {
+      class: 'modal-window',
     });
 
-    this.appendElement(automount, parent, popup);
+    this.appendElement(automount, parent, modal);
 
-    this.popupList.push(popup);
+    this.modalList.push(modal);
 
-    return popup;
+    return modal;
   }
 
   toggleSettings() {
@@ -215,6 +219,60 @@ class DomMaker {
     for (let i = 0; i < childrenArray.length; i++) {
       childrenArray[i].disabled = !childrenArray[i].disabled;
     }
+  }
+
+  newCardModal() {
+    const modalContent = this.newElement('div', '', {});
+
+    const modal = this.newModal(modalContent, false, document.body);
+    this.toggleDisabledOnChildren('.main-element');
+
+    const createLabels = labelText => {
+      const textField = this.newElement('input', '', {
+        type: 'text',
+        class: 'card-input',
+      });
+
+      const labelTextElement = this.newElement('span', labelText, {
+        class: 'label-text',
+      });
+
+      const labelElement = [
+        this.newElement('label', [labelTextElement, textField], {
+          parentElement: modalContent,
+        }),
+      ];
+
+      return textField;
+    };
+    // three text input fields, a button to submit the input and a button to close the modal
+
+    const wordInput = createLabels('word:');
+    const exampleInput = createLabels('example:');
+    const definitionInput = createLabels('definition:');
+
+    const btnSubmit = this.newElement('button', 'submit', {
+      class: 'btn-submit',
+      parentElement: modalContent,
+      click: () => {
+        console.log(wordInput);
+        this.newCard(
+          wordInput.value,
+          exampleInput.value,
+          definitionInput.value,
+          true
+        );
+      },
+    });
+
+    const btnCancel = this.newElement('button', 'cancel', {
+      parentElement: modalContent,
+      class: 'btn-cancel',
+      click: () => {
+        this.toggleDisabledOnChildren('.main-element');
+        modal.remove();
+      },
+    });
   }
 }
 
