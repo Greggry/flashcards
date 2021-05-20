@@ -3,12 +3,17 @@
 class DomMaker {
   constructor() {
     // make the new mainElement which will be the parent of everything
-
     this.mainElement = this.newElement('div', null, {
       parentElement: document.body,
       class: 'main-element',
     });
 
+    this.cardMountpoint = this.newElement('div', null, {
+      parentElement: this.mainElement,
+      class: 'card-mountpoint',
+    });
+
+    // they store cards and modals
     this.cardList = [];
     this.modalList = [];
 
@@ -18,6 +23,7 @@ class DomMaker {
     });
     this.modifyButton = this.newElement('button', 'modify button', {
       class: 'options-modify-btn',
+      click: this.modifyModal.bind(this),
     });
 
     this.options = this.newElement(
@@ -56,7 +62,7 @@ class DomMaker {
 
   appendElement(automount, parent, element) {
     // true -> append to the default element
-    if (automount === true) this.mainElement.appendChild(element);
+    if (automount === true) this.cardMountpoint.appendChild(element);
     else if (
       typeof parent === 'object' &&
       typeof parent.appendChild === 'function' &&
@@ -127,16 +133,18 @@ class DomMaker {
       } else element.setAttribute(keys[i], propertiesObj[keys[i]]); //style.width etc
     }
 
+    // specified a parent -> append
     if (propertiesObj.hasOwnProperty('parentElement'))
       this.appendElement(false, propertiesObj.parentElement, element);
 
+    // specified an event listener -> add it
     if (propertiesObj.hasOwnProperty('click'))
       element.addEventListener('click', propertiesObj['click']);
 
     return element;
   }
 
-  newCard(word, example, definition, automound, parent) {
+  newCard(word, example, definition, automount, parent) {
     const card = this.newElement('div', null, {
       class: 'card',
     });
@@ -151,12 +159,12 @@ class DomMaker {
       parentElement: card,
     });
 
-    //defintion not appended at first
+    // defintion not appended at first
     const definitionElement = this.newElement('p', definition, {
       class: 'card-definition',
     });
 
-    this.appendElement(automound, parent, card);
+    this.appendElement(automount, parent, card);
 
     card.flipped = true;
 
@@ -179,6 +187,18 @@ class DomMaker {
     this.cardList.push(card);
 
     return card;
+  }
+
+  refreshCards(mountpoint = this.cardMountpoint) {
+    // card mountpoint is always this.cardMountpoint
+
+    // remove items from the mountpoint
+    mountpoint.innerHTML = '';
+
+    // add them from the list
+    this.cardList.forEach(item => {
+      this.appendElement(false, mountpoint, item);
+    });
   }
 
   newModal(contents, automount, parent) {
@@ -265,12 +285,62 @@ class DomMaker {
       },
     });
 
-    const btnCancel = this.newElement('button', 'cancel', {
+    const btnCancel = this.generateRemoveButton(modal, modalContent);
+  }
+
+  modifyModal() {
+    // element to which things are appended
+    const modalContent = this.newElement('div', '', {});
+
+    const modal = this.newModal(modalContent, false, document.body);
+    this.toggleDisabledOnChildren('.main-element');
+
+    // show all the cards in a row
+    console.log(this.cardList);
+    const previewCardList = this.cardList.map((item, i) => {
+      const elementCopy = item.cloneNode(true);
+
+      elementCopy.classList.add('small');
+
+      // all of these cards should have an X in the top right corner, clicking on which deletes the card from the list
+      const removeCardButton = this.newElement('button', null, {
+        class: 'btn-delete',
+        parentElement: elementCopy,
+        click: () => {
+          // remove from this.cardList
+          this.cardList.splice(i, 1);
+          console.log(this.cardList);
+
+          // remove preview
+          elementCopy.remove();
+
+          // refresh cards - function that removes all the items and adds the ones from the list
+          this.refreshCards();
+        },
+      });
+
+      return elementCopy;
+    });
+
+    console.log(previewCardList);
+
+    const previewCardContainer = this.newElement('div', [...previewCardList], {
+      class: 'preview-card-container',
       parentElement: modalContent,
+    });
+
+    // TODO clicking on a card should bring up text inputs that control its content
+
+    const btnCancel = this.generateRemoveButton(modal, modalContent);
+  }
+
+  generateRemoveButton(element, parent) {
+    return this.newElement('button', 'cancel', {
+      parentElement: parent,
       class: 'btn-cancel',
       click: () => {
         this.toggleDisabledOnChildren('.main-element');
-        modal.remove();
+        element.remove();
       },
     });
   }
@@ -285,8 +355,24 @@ const card1 = maker.newCard(
   true
 );
 
+const card2 = maker.newCard(
+  'woord',
+  'thiis is an example setence',
+  'this is the deffinition of the word',
+  true
+);
+
+const card3 = maker.newCard(
+  'wooord',
+  'thiiis is an example setence',
+  'this is the defffinition of the word',
+  true
+);
+
 // TODO
 // settings
 // a side pane on the left with options
 // side pane - add modify delete etc
 // the cards are the only keyboard unfriendly element
+
+// BUG cards are still clickable when a modal is opened
