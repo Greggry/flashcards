@@ -375,9 +375,3 @@ const card3 = maker.newCard(
 // settings
 // side pane - modify
 // toggle method for toggling blur and disabling
-
-// changes
-// fixed the bug with the cards misaligning
-// changed the position of the delete button
-// cards are now not clickable when modal is opened
-// cards are now keyboard friendly
