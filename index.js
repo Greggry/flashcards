@@ -145,7 +145,7 @@ class DomMaker {
   }
 
   newCard(word, example, definition, automount, parent) {
-    const card = this.newElement('div', null, {
+    const card = this.newElement('button', null, {
       class: 'card',
     });
 
@@ -216,8 +216,7 @@ class DomMaker {
   toggleSettings() {
     if (!this.settingsShown) {
       // add blur, disable
-      this.toggleDisabledOnChildren('.main-element');
-      this.mainElement.classList.add('blurred');
+      this.toggleDisableAndBlur();
 
       // append this.settings
       document.body.appendChild(this.settings);
@@ -226,8 +225,7 @@ class DomMaker {
       document.body.removeChild(this.settings);
 
       // remove blur and enable elements back
-      this.toggleDisabledOnChildren('.main-element');
-      this.mainElement.classList.remove('blurred');
+      this.toggleDisableAndBlur();
     }
 
     this.settingsShown = !this.settingsShown;
@@ -245,7 +243,7 @@ class DomMaker {
     const modalContent = this.newElement('div', '', {});
 
     const modal = this.newModal(modalContent, false, document.body);
-    this.toggleDisabledOnChildren('.main-element');
+    this.toggleDisableAndBlur();
 
     const createLabels = labelText => {
       const textField = this.newElement('input', '', {
@@ -293,10 +291,9 @@ class DomMaker {
     const modalContent = this.newElement('div', '', {});
 
     const modal = this.newModal(modalContent, false, document.body);
-    this.toggleDisabledOnChildren('.main-element');
+    this.toggleDisableAndBlur();
 
     // show all the cards in a row
-    console.log(this.cardList);
     const previewCardList = this.cardList.map((item, i) => {
       const elementCopy = item.cloneNode(true);
 
@@ -339,10 +336,15 @@ class DomMaker {
       parentElement: parent,
       class: 'btn-cancel',
       click: () => {
-        this.toggleDisabledOnChildren('.main-element');
+        this.toggleDisableAndBlur();
         element.remove();
       },
     });
+  }
+
+  toggleDisableAndBlur() {
+    this.toggleDisabledOnChildren('.main-element');
+    this.mainElement.classList.toggle('blurred');
   }
 }
 
@@ -350,29 +352,32 @@ const maker = new DomMaker();
 
 const card1 = maker.newCard(
   'word',
-  'this is an example setence',
+  'this is an example sentence',
   'this is the definition of the word',
   true
 );
 
 const card2 = maker.newCard(
   'woord',
-  'thiis is an example setence',
+  'thiis is an example sentence',
   'this is the deffinition of the word',
   true
 );
 
 const card3 = maker.newCard(
   'wooord',
-  'thiiis is an example setence',
+  'thiiis is an example sentence',
   'this is the defffinition of the word',
   true
 );
 
 // TODO
 // settings
-// a side pane on the left with options
-// side pane - add modify delete etc
-// the cards are the only keyboard unfriendly element
+// side pane - modify
+// toggle method for toggling blur and disabling
 
-// BUG cards are still clickable when a modal is opened
+// changes
+// fixed the bug with the cards misaligning
+// changed the position of the delete button
+// cards are now not clickable when modal is opened
+// cards are now keyboard friendly

@@ -48,6 +48,9 @@ body {
 .main-element .side-pane button:disabled {
   cursor: default;
 }
+.main-element .card-mountpoint {
+  display: flex;
+}
 
 .card {
   display: inline-flex;
@@ -74,6 +77,9 @@ body {
 .card.small {
   width: 4rem;
   height: 6rem;
+  padding: 3px;
+  margin: 0 15px;
+  position: relative;
   font-size: 0.6rem;
 }
 .card.small .card-title {
@@ -90,6 +96,11 @@ body {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(1rem, -0.7rem);
 }
 .card.small .btn-delete::after {
   content: "×";
@@ -111,6 +122,10 @@ body {
   font-size: 2rem;
   border-radius: 5px;
   opacity: 0.97;
+}
+.modal-window .preview-card-container {
+  display: flex;
+  justify-content: center;
 }
 .modal-window label {
   display: flex;
