@@ -13,6 +13,9 @@ class DomMaker {
       class: 'card-mountpoint',
     });
 
+    // when a modal is open, elements should all be disabled
+    this.elementsDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
+
     // they store cards and modals
     this.cardList = [];
     this.modalList = [];
@@ -35,6 +38,7 @@ class DomMaker {
     this.sidePane = this.newElement('div', ['<h1>options</h1>', this.options], {
       class: 'side-pane',
       parentElement: this.mainElement,
+      prepend: true, // it needs to be first in the dom
     });
 
     this.settings = this.newModal('these are settings', false);
@@ -60,7 +64,7 @@ class DomMaker {
     this.settingsShown = false;
   }
 
-  appendElement(automount, parent, element) {
+  appendElement(automount, parent, element, prepend = false) {
     // true -> append to the default element
     if (automount === true) this.cardMountpoint.appendChild(element);
     else if (
@@ -69,8 +73,8 @@ class DomMaker {
       typeof element === 'object' &&
       typeof element.appendChild === 'function'
     )
-      // can append
-      parent.appendChild(element);
+      if (prepend) parent.prepend(element);
+      else parent.appendChild(element);
   }
 
   newElement(elementType, content, propertiesObj) {
@@ -80,6 +84,7 @@ class DomMaker {
 
     const element = document.createElement(elementType);
 
+    // append content
     // IIFE recursive function lol
     (function recursiveCheckAssignContent(content, layer = 0, maxLayer = 3) {
       if (layer >= maxLayer) return false;
@@ -94,17 +99,13 @@ class DomMaker {
           // valid DOM node inside
           element.appendChild(content);
         else if (typeof content === 'object') {
+          // could be an array
           //run the function for each key
 
           const keys = Object.keys(content);
 
           for (let i = 0; i < keys.length; i++)
-            recursiveCheckAssignContent(content[keys[i]], layer++); // check inside the object
-        } else if (Array.isArray(content)) {
-          // run for each element
-
-          for (let i = 0; i < keys.length; i++)
-            recursiveCheckAssignContent(content[keys[i]], layer++); // check inside the array
+            recursiveCheckAssignContent(content[keys[i]], layer + 1); // check inside the object (array)
         }
       }
     })(content, 0, 3);
@@ -122,8 +123,7 @@ class DomMaker {
 
       // check for styles
       if (keys[i] === 'style') {
-        // it's a style object
-        console.log(propertiesObj.style);
+        // it's a style object!
 
         const styleKeys = Object.keys(propertiesObj.style);
 
@@ -135,7 +135,12 @@ class DomMaker {
 
     // specified a parent -> append
     if (propertiesObj.hasOwnProperty('parentElement'))
-      this.appendElement(false, propertiesObj.parentElement, element);
+      this.appendElement(
+        false,
+        propertiesObj.parentElement,
+        element,
+        propertiesObj.prepend // ignore if not set, if set to true it will be inserted as the first child of its parent
+      );
 
     // specified an event listener -> add it
     if (propertiesObj.hasOwnProperty('click'))
@@ -166,10 +171,9 @@ class DomMaker {
 
     this.appendElement(automount, parent, card);
 
-    card.flipped = true;
-
-    card.addEventListener('click', () => {
-      if (card.flipped) {
+    card.isFlipped = false; // isFlipped to the definition side
+    card.flip = () => {
+      if (!card.isFlipped) {
         card.removeChild(wordElement);
         card.removeChild(exampleElement);
 
@@ -181,8 +185,15 @@ class DomMaker {
         card.appendChild(exampleElement);
       }
 
-      card.flipped = !card.flipped;
+      card.isFlipped = !card.isFlipped;
+    };
+
+    card.addEventListener('click', () => {
+      card.flip();
     });
+
+    // state of the card should match the disabled
+    card.disabled = this.elementsDisabled;
 
     this.cardList.push(card);
 
@@ -231,21 +242,18 @@ class DomMaker {
     this.settingsShown = !this.settingsShown;
   }
 
-  toggleDisabledOnChildren(parentSelector) {
-    const childrenArray = document.querySelectorAll(`${parentSelector} *`);
+  toggleDisabled() {
+    const childrenArray = document.querySelectorAll('.main-element *');
+
+    this.elementsDisabled = !this.elementsDisabled;
 
     for (let i = 0; i < childrenArray.length; i++) {
-      childrenArray[i].disabled = !childrenArray[i].disabled;
+      childrenArray[i].disabled = this.elementsDisabled; // first it will disable stuff then enable and so on
     }
   }
 
-  newCardModal() {
-    const modalContent = this.newElement('div', '', {});
-
-    const modal = this.newModal(modalContent, false, document.body);
-    this.toggleDisableAndBlur();
-
-    const createLabels = labelText => {
+  generateLabels(parentElement) {
+    const createLabel = labelText => {
       const textField = this.newElement('input', '', {
         type: 'text',
         class: 'card-input',
@@ -257,31 +265,37 @@ class DomMaker {
 
       const labelElement = [
         this.newElement('label', [labelTextElement, textField], {
-          parentElement: modalContent,
+          parentElement: parentElement,
         }),
       ];
 
       return textField;
     };
+
     // three text input fields, a button to submit the input and a button to close the modal
+    return [
+      createLabel('word:'),
+      createLabel('example:'),
+      createLabel('definition:'),
+    ];
+  }
 
-    const wordInput = createLabels('word:');
-    const exampleInput = createLabels('example:');
-    const definitionInput = createLabels('definition:');
+  newCardModal() {
+    const modalContent = this.newElement('div', '', {});
 
-    const btnSubmit = this.newElement('button', 'submit', {
-      class: 'btn-submit',
-      parentElement: modalContent,
-      click: () => {
-        console.log(wordInput);
-        this.newCard(
-          wordInput.value,
-          exampleInput.value,
-          definitionInput.value,
-          true
-        );
-      },
-    });
+    const modal = this.newModal(modalContent, false, document.body);
+    this.toggleDisableAndBlur();
+
+    const [wordInput, exampleInput, definitionInput] =
+      this.generateLabels(modalContent);
+
+    const btnSubmit = this.generateSubmitButton(
+      true,
+      wordInput,
+      exampleInput,
+      definitionInput,
+      modalContent
+    );
 
     const btnCancel = this.generateRemoveButton(modal, modalContent);
   }
@@ -293,9 +307,12 @@ class DomMaker {
     const modal = this.newModal(modalContent, false, document.body);
     this.toggleDisableAndBlur();
 
-    // show all the cards in a row
-    const previewCardList = this.cardList.map((item, i) => {
-      const elementCopy = item.cloneNode(true);
+    // create an array of the cards with additional functionalities
+    const previewCardList = this.cardList.map(item => {
+      // flip each card to the front side
+      item.isFlipped ? item.flip() : '';
+
+      const elementCopy = item.cloneNode(true); // true for deep copy
 
       elementCopy.classList.add('small');
 
@@ -304,31 +321,86 @@ class DomMaker {
         class: 'btn-delete',
         parentElement: elementCopy,
         click: () => {
-          // remove from this.cardList
-          this.cardList.splice(i, 1);
-          console.log(this.cardList);
+          // remove from cardlist
+          this.cardList.includes(item)
+            ? this.cardList.splice(this.cardList.indexOf(item), 1)
+            : ''; // we need to find an index, the i variable is no longer correct when we modified the cardList structure
 
           // remove preview
           elementCopy.remove();
 
-          // refresh cards - function that removes all the items and adds the ones from the list
-          this.refreshCards();
+          // refresh cards is a function that removes all the items and adds the ones from the list
+          this.refreshCards(this.cardMountpoint);
         },
       });
+
+      // TODO clicking on a card should bring up text inputs that control its content
+      elementCopy.addEventListener('click', () => {
+        textInputsContainer.innerHTML = '';
+
+        const [word, example, definition] =
+          this.generateLabels(textInputsContainer);
+
+        // TODO - redo the array that holds the cards, it should hold the items with their respective data (and IDs!)
+        word.value = 'FIXME';
+        example.value = 'FIXME';
+        definition.value = 'FIXME';
+
+        const submitButton = this.generateSubmitButton(
+          false,
+          word, // 'FIXME'
+          example, // 'FIXME'
+          definition, // 'FIXME'
+          textInputsContainer
+        );
+      });
+
+      // cards are copied, but the disabled property should stay false
+      elementCopy.disabled = false;
 
       return elementCopy;
     });
 
-    console.log(previewCardList);
-
-    const previewCardContainer = this.newElement('div', [...previewCardList], {
+    // append all of those items here
+    const previewCardContainer = this.newElement('div', previewCardList, {
       class: 'preview-card-container',
+      parentElement: modalContent,
+      prepend: true,
+    });
+
+    const textInputsContainer = this.newElement('div', '', {
       parentElement: modalContent,
     });
 
-    // TODO clicking on a card should bring up text inputs that control its content
-
     const btnCancel = this.generateRemoveButton(modal, modalContent);
+  }
+
+  updateCard(card, word, example, definition) {
+    // TODO this function will be used to change values of cards
+  }
+
+  generateSubmitButton(
+    makeNew,
+    wordInput,
+    exampleInput,
+    definitionInput,
+    parent,
+    card = null
+  ) {
+    return this.newElement('button', 'submit', {
+      class: 'btn-submit',
+      parentElement: parent,
+      click: () => {
+        makeNew
+          ? this.newCard(
+              wordInput.value,
+              exampleInput.value,
+              definitionInput.value,
+              true
+            )
+          : this.modifyCard(card, wordInput, exampleInput, definitionInput);
+      },
+    });
   }
 
   generateRemoveButton(element, parent) {
@@ -343,35 +415,32 @@ class DomMaker {
   }
 
   toggleDisableAndBlur() {
-    this.toggleDisabledOnChildren('.main-element');
+    this.toggleDisabled();
     this.mainElement.classList.toggle('blurred');
   }
 }
 
 const maker = new DomMaker();
 
-const card1 = maker.newCard(
-  'word',
-  'this is an example sentence',
-  'this is the definition of the word',
-  true
-);
+function generateExampleCards(numberOfCards) {
+  for (let i = 0; i < numberOfCards; i++) {
+    maker.newCard(
+      `word no.${i + 1}`,
+      `example sentence no.${i + 1}`,
+      `definition no.${i + 1}`,
+      true
+    );
+  }
+}
 
-const card2 = maker.newCard(
-  'woord',
-  'thiis is an example sentence',
-  'this is the deffinition of the word',
-  true
-);
-
-const card3 = maker.newCard(
-  'wooord',
-  'thiiis is an example sentence',
-  'this is the defffinition of the word',
-  true
-);
+generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 
 // TODO
-// settings
-// side pane - modify
-// toggle method for toggling blur and disabling
+// add:
+//  options for settings
+//  proper modify card options, changing text, switching the order of the cards, etc
+//  decks of cards
+//  duplicates and IDs
+// refactor:
+//  toggle method for toggling blur and disabling elements - unify the methods - they are different for settings and other modals
+//  every modal begins with the same lines of code, remake it so there is a function that uses callbacks

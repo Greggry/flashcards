@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.1 - 2021-05-30
+
+<hr />
+
+### Added:
+
+- 'modify' modal: only front sides of flashcards are shown
+- the prepend functionality (prepend: true in attributesObject)
+- grid display
+- a random number of cards is generated each refresh (1-5 cards)
+- now the method for flipping cards is stored in card.flip
+
+### Changed:
+
+- toggleDisabled (previously toggleDisabledOnChildren) now consequently changes the disabled property to one state on the other for all children of .main-element
+- fixed card removal and display system (in the 'modify' modal)
+- side-pane is not position: absolute now, but a grid element
+- removed the opacity from modal windows
+
 ## 0.1.0 - 2021-05-28
 
 <hr/>
