@@ -17,8 +17,8 @@ class DomMaker {
     this.elementsDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
 
     // they store cards and modals
-    this.cardList = [];
-    this.modalList = [];
+    this.cardArray = [];
+    this.modalArray = [];
 
     this.addButton = this.newElement('button', 'add a thing!', {
       class: 'options-add-btn',
@@ -130,7 +130,11 @@ class DomMaker {
         for (let j = 0; j < styleKeys.length; j++) {
           element.style[styleKeys[j]] = propertiesObj.style[styleKeys[j]];
         }
-      } else element.setAttribute(keys[i], propertiesObj[keys[i]]); //style.width etc
+      } else
+        element.setAttribute(
+          keys[i].replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()),
+          propertiesObj[keys[i]]
+        ); // parse to give attributes converted to kebab-case (dataId -> data-id)
     }
 
     // specified a parent -> append
@@ -149,9 +153,14 @@ class DomMaker {
     return element;
   }
 
-  newCard(word, example, definition, automount, parent) {
+  newCard(word, example, definition, options) {
+    const id = options.id // if we set an id before (rerender)
+      ? options.id
+      : `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
     const card = this.newElement('button', null, {
       class: 'card',
+      dataId: id,
     });
 
     const wordElement = this.newElement('h1', word, {
@@ -169,33 +178,44 @@ class DomMaker {
       class: 'card-definition',
     });
 
-    this.appendElement(automount, parent, card);
+    if (options.mount || options.parentElement)
+      this.appendElement(options.mount, options.parentElement, card);
 
-    card.isFlipped = false; // isFlipped to the definition side
-    card.flip = () => {
-      if (!card.isFlipped) {
-        card.removeChild(wordElement);
-        card.removeChild(exampleElement);
+    // flippable unless specified otherwise
+    if (!(options.isFlippable === false)) {
+      card.isFlipped = false; // isFlipped to the definition side
+      card.flip = () => {
+        if (!card.isFlipped) {
+          card.removeChild(wordElement);
+          card.removeChild(exampleElement);
 
-        card.appendChild(definitionElement);
-      } else {
-        card.removeChild(definitionElement);
+          card.appendChild(definitionElement);
+        } else {
+          card.removeChild(definitionElement);
 
-        card.appendChild(wordElement);
-        card.appendChild(exampleElement);
-      }
+          card.appendChild(wordElement);
+          card.appendChild(exampleElement);
+        }
 
-      card.isFlipped = !card.isFlipped;
-    };
+        card.isFlipped = !card.isFlipped;
+      };
 
-    card.addEventListener('click', () => {
-      card.flip();
-    });
+      card.addEventListener('click', () => {
+        card.flip();
+      });
+    }
+
+    if (!options.rerender)
+      // the card is loaded for the first time
+      this.cardArray.push({
+        id,
+        word,
+        example,
+        definition,
+      });
 
     // state of the card should match the disabled
     card.disabled = this.elementsDisabled;
-
-    this.cardList.push(card);
 
     return card;
   }
@@ -207,8 +227,11 @@ class DomMaker {
     mountpoint.innerHTML = '';
 
     // add them from the list
-    this.cardList.forEach(item => {
-      this.appendElement(false, mountpoint, item);
+    this.cardArray.forEach(item => {
+      this.newCard(item.word, item.example, item.definition, {
+        mount: true,
+        rerender: true,
+      });
     });
   }
 
@@ -219,7 +242,7 @@ class DomMaker {
 
     this.appendElement(automount, parent, modal);
 
-    this.modalList.push(modal);
+    this.modalArray.push(modal);
 
     return modal;
   }
@@ -300,69 +323,56 @@ class DomMaker {
     const btnCancel = this.generateRemoveButton(modal, modalContent);
   }
 
+  generateCardPreview() {
+    const previewCardArray = [];
+
+    // forEach card make a new one
+    this.cardArray.forEach(cardObject => {
+      const cardElement = this.newCard(
+        cardObject.word,
+        cardObject.example,
+        cardObject.definition,
+        { isFlippable: false, mount: false, rerender: true, id: cardObject.id }
+      );
+
+      cardElement.classList.add('small');
+      cardElement.disabled = false;
+
+      // push the element to previewcardarray
+      previewCardArray.push(cardElement);
+
+      const removeCardButton = this.newElement('button', null, {
+        class: 'btn-delete',
+        parentElement: cardElement,
+        click: () => {
+          // remove from cardArray
+          this.cardArray.includes(cardObject)
+            ? this.cardArray.splice(this.cardArray.indexOf(cardObject), 1)
+            : '';
+
+          // remove preview
+          cardElement.remove();
+
+          this.refreshCards(this.cardMountpoint);
+        },
+      });
+    });
+
+    return previewCardArray;
+  }
+
   modifyModal() {
-    // element to which things are appended
+    // the element to which things are appended
     const modalContent = this.newElement('div', '', {});
 
     const modal = this.newModal(modalContent, false, document.body);
     this.toggleDisableAndBlur();
 
     // create an array of the cards with additional functionalities
-    const previewCardList = this.cardList.map(item => {
-      // flip each card to the front side
-      item.isFlipped ? item.flip() : '';
+    const previewCardArray = this.generateCardPreview();
 
-      const elementCopy = item.cloneNode(true); // true for deep copy
-
-      elementCopy.classList.add('small');
-
-      // all of these cards should have an X in the top right corner, clicking on which deletes the card from the list
-      const removeCardButton = this.newElement('button', null, {
-        class: 'btn-delete',
-        parentElement: elementCopy,
-        click: () => {
-          // remove from cardlist
-          this.cardList.includes(item)
-            ? this.cardList.splice(this.cardList.indexOf(item), 1)
-            : ''; // we need to find an index, the i variable is no longer correct when we modified the cardList structure
-
-          // remove preview
-          elementCopy.remove();
-
-          // refresh cards is a function that removes all the items and adds the ones from the list
-          this.refreshCards(this.cardMountpoint);
-        },
-      });
-
-      // TODO clicking on a card should bring up text inputs that control its content
-      elementCopy.addEventListener('click', () => {
-        textInputsContainer.innerHTML = '';
-
-        const [word, example, definition] =
-          this.generateLabels(textInputsContainer);
-
-        // TODO - redo the array that holds the cards, it should hold the items with their respective data (and IDs!)
-        word.value = 'FIXME';
-        example.value = 'FIXME';
-        definition.value = 'FIXME';
-
-        const submitButton = this.generateSubmitButton(
-          false,
-          word, // 'FIXME'
-          example, // 'FIXME'
-          definition, // 'FIXME'
-          textInputsContainer
-        );
-      });
-
-      // cards are copied, but the disabled property should stay false
-      elementCopy.disabled = false;
-
-      return elementCopy;
-    });
-
-    // append all of those items here
-    const previewCardContainer = this.newElement('div', previewCardList, {
+    // prepend all of those items here
+    this.previewCardContainer = this.newElement('div', previewCardArray, {
       class: 'preview-card-container',
       parentElement: modalContent,
       prepend: true,
@@ -372,11 +382,54 @@ class DomMaker {
       parentElement: modalContent,
     });
 
+    // event delegation
+    this.previewCardContainer.addEventListener('click', event => {
+      textInputsContainer.innerHTML = '';
+
+      const [word, example, definition] =
+        this.generateLabels(textInputsContainer);
+
+      // get the IDs from the DOM, then get the cardObject
+      const clicked = event.target.closest('.card');
+
+      const cardObject = this.cardArray.find(
+        card => card.id === clicked?.dataset.id
+      );
+      if (clicked) {
+        word.value = cardObject.word;
+        example.value = cardObject.example;
+        definition.value = cardObject.definition;
+      }
+
+      const submitButton = this.generateSubmitButton(
+        false,
+        word,
+        example,
+        definition,
+        textInputsContainer,
+        cardObject
+      );
+    });
+
     const btnCancel = this.generateRemoveButton(modal, modalContent);
   }
 
   updateCard(card, word, example, definition) {
     // TODO this function will be used to change values of cards
+
+    if (!card) return;
+
+    card.word = word;
+    card.example = example;
+    card.definition = definition;
+
+    // update UI
+    this.refreshCards();
+
+    this.previewCardContainer.innerHTML = '';
+    this.generateCardPreview().forEach(card =>
+      this.previewCardContainer.append(card)
+    );
   }
 
   generateSubmitButton(
@@ -396,9 +449,14 @@ class DomMaker {
               wordInput.value,
               exampleInput.value,
               definitionInput.value,
-              true
+              { mount: true }
             )
-          : this.modifyCard(card, wordInput, exampleInput, definitionInput);
+          : this.updateCard(
+              card,
+              wordInput.value,
+              exampleInput.value,
+              definitionInput.value
+            );
       },
     });
   }
@@ -428,7 +486,7 @@ function generateExampleCards(numberOfCards) {
       `word no.${i + 1}`,
       `example sentence no.${i + 1}`,
       `definition no.${i + 1}`,
-      true
+      { mount: true }
     );
   }
 }

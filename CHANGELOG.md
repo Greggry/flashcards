@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.2 - 2021-06-21
+
+<hr />
+
+### Added:
+
+- the functionality to change flashcard contents
+- the function to reload the preview cards in the modal window
+- the option to make cards unflippable (for previews)
+
+### Changed:
+
+- the organisation of cards. They are now stored as objects.
+- DomMaker.newElement() now converts the attributes to kebab-case
+
 ## 0.1.1 - 2021-05-30
 
 <hr />
