@@ -13,8 +13,8 @@ class DomMaker {
       class: 'card-mountpoint',
     });
 
-    // when a modal is open, elements should all be disabled
-    this.elementsDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
+    // this flag tracks the state of the children of main element
+    this.isEachChildDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
 
     // they store cards and modals
     this.cardArray = [];
@@ -38,7 +38,7 @@ class DomMaker {
     this.sidePane = this.newElement('div', ['<h1>options</h1>', this.options], {
       class: 'side-pane',
       parentElement: this.mainElement,
-      prepend: true, // it needs to be first in the dom
+      doPrepend: true, // it needs to be first in the dom
     });
 
     this.settings = this.newModal('these are settings', false);
@@ -61,19 +61,19 @@ class DomMaker {
       this.toggleSettings.bind(this)
     );
 
-    this.settingsShown = false;
+    this.isSettingsModalShown = false;
   }
 
-  appendElement(automount, parent, element, prepend = false) {
+  appendElement(doMount, parent, element, doPrepend = false) {
     // true -> append to the default element
-    if (automount === true) this.cardMountpoint.appendChild(element);
+    if (doMount === true) this.cardMountpoint.appendChild(element);
     else if (
       typeof parent === 'object' &&
       typeof parent.appendChild === 'function' &&
       typeof element === 'object' &&
       typeof element.appendChild === 'function'
     )
-      if (prepend) parent.prepend(element);
+      if (doPrepend) parent.prepend(element);
       else parent.appendChild(element);
   }
 
@@ -87,26 +87,26 @@ class DomMaker {
     // append content
     // IIFE recursive function lol
     (function recursiveCheckAssignContent(content, layer = 0, maxLayer = 3) {
-      if (layer >= maxLayer) return false;
-      if (content) {
-        if (typeof content === 'string')
-          // valid argument for innerHTML
-          element.innerHTML = content;
-        else if (
-          typeof content === 'object' &&
-          typeof content.appendChild === 'function'
-        )
-          // valid DOM node inside
-          element.appendChild(content);
-        else if (typeof content === 'object') {
-          // could be an array
-          //run the function for each key
+      if (layer >= maxLayer || !content) return;
 
-          const keys = Object.keys(content);
+      if (typeof content === 'string')
+        // valid argument for innerHTML
+        element.innerHTML = content;
+      else if (
+        typeof content === 'object' &&
+        typeof content.appendChild === 'function'
+      )
+        // valid DOM node inside
+        element.appendChild(content);
+      else if (typeof content === 'object') {
+        // array is an object too, this case works for them both
 
-          for (let i = 0; i < keys.length; i++)
-            recursiveCheckAssignContent(content[keys[i]], layer + 1); // check inside the object (array)
-        }
+        const keys = Object.keys(content);
+
+        // run the function for each key
+        keys.forEach(key =>
+          recursiveCheckAssignContent(content[key], layer + 1)
+        ); // check inside the object (array)
       }
     })(content, 0, 3);
 
@@ -114,28 +114,25 @@ class DomMaker {
       return element; // we're done
     }
 
-    // add props
-    const keys = Object.keys(propertiesObj);
+    // adding properties
+    const keys = Object.keys(propertiesObj); // list of property names
 
-    for (let i = 0; i < keys.length; i++) {
-      if (typeof propertiesObj[keys[i]] !== 'string' && keys[i] !== 'style')
-        continue;
+    keys.forEach(key => {
+      if (typeof propertiesObj[key] !== 'string' && key !== 'style') return; // same as 'continue' in a for loop
 
-      // check for styles
-      if (keys[i] === 'style') {
-        // it's a style object!
-
+      // check to assign styles
+      if (key === 'style') {
         const styleKeys = Object.keys(propertiesObj.style);
 
-        for (let j = 0; j < styleKeys.length; j++) {
-          element.style[styleKeys[j]] = propertiesObj.style[styleKeys[j]];
-        }
+        styleKeys.map(styleProperty => {
+          element.style[styleProperty] = propertiesObj.style[styleProperty];
+        });
       } else
         element.setAttribute(
-          keys[i].replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()),
-          propertiesObj[keys[i]]
+          key.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()),
+          propertiesObj[key]
         ); // parse to give attributes converted to kebab-case (dataId -> data-id)
-    }
+    });
 
     // specified a parent -> append
     if (propertiesObj.hasOwnProperty('parentElement'))
@@ -143,7 +140,7 @@ class DomMaker {
         false,
         propertiesObj.parentElement,
         element,
-        propertiesObj.prepend // ignore if not set, if set to true it will be inserted as the first child of its parent
+        propertiesObj.doPrepend // ignore if not set, if set to true it will be inserted as the first child of its parent
       );
 
     // specified an event listener -> add it
@@ -154,7 +151,7 @@ class DomMaker {
   }
 
   newCard(word, example, definition, options) {
-    const id = options.id // if we set an id before (rerender)
+    const id = options.id // if we set an id before (doRerender)
       ? options.id
       : `${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
@@ -178,8 +175,8 @@ class DomMaker {
       class: 'card-definition',
     });
 
-    if (options.mount || options.parentElement)
-      this.appendElement(options.mount, options.parentElement, card);
+    if (options.doMount || options.parentElement)
+      this.appendElement(options.doMount, options.parentElement, card);
 
     // flippable unless specified otherwise
     if (!(options.isFlippable === false)) {
@@ -205,7 +202,7 @@ class DomMaker {
       });
     }
 
-    if (!options.rerender)
+    if (!options.doRerender)
       // the card is loaded for the first time
       this.cardArray.push({
         id,
@@ -215,7 +212,7 @@ class DomMaker {
       });
 
     // state of the card should match the disabled
-    card.disabled = this.elementsDisabled;
+    card.disabled = this.isEachChildDisabled;
 
     return card;
   }
@@ -229,18 +226,18 @@ class DomMaker {
     // add them from the list
     this.cardArray.forEach(item => {
       this.newCard(item.word, item.example, item.definition, {
-        mount: true,
-        rerender: true,
+        doMount: true,
+        doRerender: true,
       });
     });
   }
 
-  newModal(contents, automount, parent) {
+  newModal(contents, doMount, parent) {
     const modal = this.newElement('div', contents, {
       class: 'modal-window',
     });
 
-    this.appendElement(automount, parent, modal);
+    this.appendElement(doMount, parent, modal);
 
     this.modalArray.push(modal);
 
@@ -248,7 +245,7 @@ class DomMaker {
   }
 
   toggleSettings() {
-    if (!this.settingsShown) {
+    if (!this.isSettingsModalShown) {
       // add blur, disable
       this.toggleDisableAndBlur();
 
@@ -262,17 +259,17 @@ class DomMaker {
       this.toggleDisableAndBlur();
     }
 
-    this.settingsShown = !this.settingsShown;
+    this.isSettingsModalShown = !this.isSettingsModalShown;
   }
 
   toggleDisabled() {
     const childrenArray = document.querySelectorAll('.main-element *');
 
-    this.elementsDisabled = !this.elementsDisabled;
+    this.isEachChildDisabled = !this.isEachChildDisabled;
 
-    for (let i = 0; i < childrenArray.length; i++) {
-      childrenArray[i].disabled = this.elementsDisabled; // first it will disable stuff then enable and so on
-    }
+    childrenArray.forEach(child => {
+      child.disabled = this.isEachChildDisabled; // first it will disable the children then enable and so on
+    });
   }
 
   generateLabels(parentElement) {
@@ -332,7 +329,12 @@ class DomMaker {
         cardObject.word,
         cardObject.example,
         cardObject.definition,
-        { isFlippable: false, mount: false, rerender: true, id: cardObject.id }
+        {
+          isFlippable: false,
+          doMount: false,
+          doRerender: true,
+          id: cardObject.id,
+        }
       );
 
       cardElement.classList.add('small');
@@ -371,11 +373,11 @@ class DomMaker {
     // create an array of the cards with additional functionalities
     const previewCardArray = this.generateCardPreview();
 
-    // prepend all of those items here
+    // prepend all of those items here - so they are at the top of the modal
     this.previewCardContainer = this.newElement('div', previewCardArray, {
       class: 'preview-card-container',
       parentElement: modalContent,
-      prepend: true,
+      doPrepend: true,
     });
 
     const textInputsContainer = this.newElement('div', '', {
@@ -433,7 +435,7 @@ class DomMaker {
   }
 
   generateSubmitButton(
-    makeNew,
+    doMakeNew,
     wordInput,
     exampleInput,
     definitionInput,
@@ -444,12 +446,12 @@ class DomMaker {
       class: 'btn-submit',
       parentElement: parent,
       click: () => {
-        makeNew
+        doMakeNew
           ? this.newCard(
               wordInput.value,
               exampleInput.value,
               definitionInput.value,
-              { mount: true }
+              { doMount: true }
             )
           : this.updateCard(
               card,
@@ -486,7 +488,7 @@ function generateExampleCards(numberOfCards) {
       `word no.${i + 1}`,
       `example sentence no.${i + 1}`,
       `definition no.${i + 1}`,
-      { mount: true }
+      { doMount: true }
     );
   }
 }
@@ -496,9 +498,8 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 // TODO
 // add:
 //  options for settings
-//  proper modify card options, changing text, switching the order of the cards, etc
+//  proper modify card options, switching the order of the cards, and such
 //  decks of cards
-//  duplicates and IDs
 // refactor:
-//  toggle method for toggling blur and disabling elements - unify the methods - they are different for settings and other modals
+//  the settings modal, it works differently than others
 //  every modal begins with the same lines of code, remake it so there is a function that uses callbacks
