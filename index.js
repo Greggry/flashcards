@@ -384,6 +384,8 @@ class DomMaker {
 
     // event delegation
     this.previewCardContainer.addEventListener('click', event => {
+      if (event.target.classList.contains('btn-delete')) return;
+
       textInputsContainer.innerHTML = '';
 
       const [word, example, definition] =
@@ -415,8 +417,6 @@ class DomMaker {
   }
 
   updateCard(card, word, example, definition) {
-    // TODO this function will be used to change values of cards
-
     if (!card) return;
 
     card.word = word;
