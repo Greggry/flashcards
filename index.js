@@ -18,20 +18,23 @@ class DomMaker {
 
     // they store cards and modals
     this.cardArray = [];
-    this.modalArray = [];
 
-    this.addButton = this.newElement('button', 'add a thing!', {
+    this.addButton = this.newElement('button', 'new', {
       class: 'options-add-btn',
       click: this.newCardModal.bind(this),
     });
-    this.modifyButton = this.newElement('button', 'modify button', {
+    this.modifyButton = this.newElement('button', 'modify', {
       class: 'options-modify-btn',
       click: this.modifyModal.bind(this),
+    });
+    this.settingsButton = this.newElement('button', 'settings', {
+      class: 'options-settings-btn',
+      click: this.settingsModal.bind(this),
     });
 
     this.options = this.newElement(
       'div',
-      [this.addButton, this.modifyButton],
+      [this.addButton, this.modifyButton, this.settingsButton],
       {}
     );
 
@@ -40,28 +43,6 @@ class DomMaker {
       parentElement: this.mainElement,
       doPrepend: true, // it needs to be first in the dom
     });
-
-    this.settings = this.newModal('these are settings', false);
-
-    this.openSettingsBtn = this.newElement('button', 'settings', {
-      class: 'open-settings-btn',
-      parentElement: this.sidePane,
-    });
-    this.closeSettingsBtn = this.newElement('button', 'close', {
-      class: 'close-settings-btn',
-      parentElement: this.settings,
-    });
-
-    this.openSettingsBtn.addEventListener(
-      'click',
-      this.toggleSettings.bind(this)
-    );
-    this.closeSettingsBtn.addEventListener(
-      'click',
-      this.toggleSettings.bind(this)
-    );
-
-    this.isSettingsModalShown = false;
   }
 
   appendElement(doMount, parent, element, doPrepend = false) {
@@ -232,34 +213,17 @@ class DomMaker {
     });
   }
 
-  newModal(contents, doMount, parent) {
-    const modal = this.newElement('div', contents, {
+  newModal(doMount, parent) {
+    // the element to which things are appended
+    const modalContent = this.newElement('div', '', {});
+    const modal = this.newElement('div', modalContent, {
       class: 'modal-window',
     });
 
     this.appendElement(doMount, parent, modal);
+    this.toggleDisableAndBlur();
 
-    this.modalArray.push(modal);
-
-    return modal;
-  }
-
-  toggleSettings() {
-    if (!this.isSettingsModalShown) {
-      // add blur, disable
-      this.toggleDisableAndBlur();
-
-      // append this.settings
-      document.body.appendChild(this.settings);
-    } else {
-      // remove settings
-      document.body.removeChild(this.settings);
-
-      // remove blur and enable elements back
-      this.toggleDisableAndBlur();
-    }
-
-    this.isSettingsModalShown = !this.isSettingsModalShown;
+    return [modal, modalContent];
   }
 
   toggleDisabled() {
@@ -301,10 +265,7 @@ class DomMaker {
   }
 
   newCardModal() {
-    const modalContent = this.newElement('div', '', {});
-
-    const modal = this.newModal(modalContent, false, document.body);
-    this.toggleDisableAndBlur();
+    const [modal, modalContent] = this.newModal(false, document.body);
 
     const [wordInput, exampleInput, definitionInput] =
       this.generateLabels(modalContent);
@@ -317,7 +278,7 @@ class DomMaker {
       modalContent
     );
 
-    const btnCancel = this.generateRemoveButton(modal, modalContent);
+    const btnRemove = this.generateRemoveButton(modal, modalContent);
   }
 
   generateCardPreview() {
@@ -364,11 +325,7 @@ class DomMaker {
   }
 
   modifyModal() {
-    // the element to which things are appended
-    const modalContent = this.newElement('div', '', {});
-
-    const modal = this.newModal(modalContent, false, document.body);
-    this.toggleDisableAndBlur();
+    const [modal, modalContent] = this.newModal(false, document.body);
 
     // create an array of the cards with additional functionalities
     const previewCardArray = this.generateCardPreview();
@@ -415,7 +372,15 @@ class DomMaker {
       );
     });
 
-    const btnCancel = this.generateRemoveButton(modal, modalContent);
+    const btnRemove = this.generateRemoveButton(modal, modalContent);
+  }
+
+  settingsModal() {
+    const [modal, modalContent] = this.newModal(false, document.body);
+
+    modalContent.innerHTML = 'Settings.';
+
+    const btnRemove = this.generateRemoveButton(modal, modalContent);
   }
 
   updateCard(card, word, example, definition) {
@@ -451,7 +416,9 @@ class DomMaker {
               wordInput.value,
               exampleInput.value,
               definitionInput.value,
-              { doMount: true }
+              {
+                doMount: true,
+              }
             )
           : this.updateCard(
               card,
@@ -488,7 +455,9 @@ function generateExampleCards(numberOfCards) {
       `word no.${i + 1}`,
       `example sentence no.${i + 1}`,
       `definition no.${i + 1}`,
-      { doMount: true }
+      {
+        doMount: true,
+      }
     );
   }
 }
@@ -497,9 +466,9 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 
 // TODO
 // add:
-//  options for settings
-//  proper modify card options, switching the order of the cards, and such
+//  options for settings (changing the colour of cards)
+//  proper modify card options, switching the order of the cards (dragging?), and such
 //  decks of cards
-// refactor:
-//  the settings modal, it works differently than others
-//  every modal begins with the same lines of code, remake it so there is a function that uses callbacks
+// modify:
+//  the amount of arguments passed to functions (make them objects or something)
+//  BUG modify cards - sometimes the input fields stay on despite the deletion (enter edit mode for a card, then delete it)
