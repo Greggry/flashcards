@@ -73,10 +73,7 @@ class DomMaker {
       if (typeof content === 'string')
         // valid argument for innerHTML
         element.innerHTML = content;
-      else if (
-        typeof content === 'object' &&
-        typeof content.appendChild === 'function'
-      )
+      else if (typeof content === 'object' && typeof content.appendChild === 'function')
         // valid DOM node inside
         element.appendChild(content);
       else if (typeof content === 'object') {
@@ -85,9 +82,7 @@ class DomMaker {
         const keys = Object.keys(content);
 
         // run the function for each key
-        keys.forEach(key =>
-          recursiveCheckAssignContent(content[key], layer + 1)
-        ); // check inside the object (array)
+        keys.forEach(key => recursiveCheckAssignContent(content[key], layer + 1)); // check inside the object (array)
       }
     })(content, 0, 3);
 
@@ -215,7 +210,9 @@ class DomMaker {
 
   newModal(doMount, parent) {
     // the element to which things are appended
-    const modalContent = this.newElement('div', '', {});
+    const modalContent = this.newElement('div', '', {
+      class: 'modal-content',
+    });
     const modal = this.newElement('div', modalContent, {
       class: 'modal-window',
     });
@@ -236,7 +233,7 @@ class DomMaker {
     });
   }
 
-  generateLabels(parentElement) {
+  generateForm(parentElement) {
     const createLabel = labelText => {
       const textField = this.newElement('input', '', {
         type: 'text',
@@ -253,29 +250,35 @@ class DomMaker {
         }),
       ];
 
-      return textField;
+      return [labelElement, textField];
     };
 
+    const [wordLabel, wordInput] = createLabel('word:');
+    const [exampleLabel, exampleInput] = createLabel('example:');
+    const [definitionLabel, definitionInput] = createLabel('definition:');
+
+    const formContainer = this.newElement('div', [wordLabel, exampleLabel, definitionLabel], {
+      class: 'form-container',
+    });
+
     // three text input fields, a button to submit the input and a button to close the modal
-    return [
-      createLabel('word:'),
-      createLabel('example:'),
-      createLabel('definition:'),
-    ];
+    return [formContainer, wordInput, exampleInput, definitionInput];
   }
 
   newCardModal() {
     const [modal, modalContent] = this.newModal(false, document.body);
 
-    const [wordInput, exampleInput, definitionInput] =
-      this.generateLabels(modalContent);
+    const [formContainer, wordInput, exampleInput, definitionInput] =
+      this.generateForm(modalContent);
+
+    modalContent.appendChild(formContainer);
 
     const btnSubmit = this.generateSubmitButton(
       true,
       wordInput,
       exampleInput,
       definitionInput,
-      modalContent
+      formContainer
     );
 
     const btnRemove = this.generateRemoveButton(modal, modalContent);
@@ -286,17 +289,12 @@ class DomMaker {
 
     // forEach card make a new one
     this.cardArray.forEach(cardObject => {
-      const cardElement = this.newCard(
-        cardObject.word,
-        cardObject.example,
-        cardObject.definition,
-        {
-          isFlippable: false,
-          doMount: false,
-          doRerender: true,
-          id: cardObject.id,
-        }
-      );
+      const cardElement = this.newCard(cardObject.word, cardObject.example, cardObject.definition, {
+        isFlippable: false,
+        doMount: false,
+        doRerender: true,
+        id: cardObject.id,
+      });
 
       cardElement.classList.add('small');
       cardElement.disabled = false;
@@ -307,13 +305,16 @@ class DomMaker {
       const removeCardButton = this.newElement('button', null, {
         class: 'btn-delete',
         parentElement: cardElement,
-        click: () => {
+        click: e => {
           // remove from cardArray
           this.cardArray.includes(cardObject)
             ? this.cardArray.splice(this.cardArray.indexOf(cardObject), 1)
             : '';
 
-          // remove preview
+          // if there are labels shown, remove them from the DOM
+          cardElement.closest('.modal-content').querySelector('.form-container')?.remove();
+
+          // remove preview card
           cardElement.remove();
 
           this.refreshCards(this.cardMountpoint);
@@ -326,7 +327,6 @@ class DomMaker {
 
   modifyModal() {
     const [modal, modalContent] = this.newModal(false, document.body);
-
     // create an array of the cards with additional functionalities
     const previewCardArray = this.generateCardPreview();
 
@@ -337,37 +337,32 @@ class DomMaker {
       doPrepend: true,
     });
 
-    const textInputsContainer = this.newElement('div', '', {
-      parentElement: modalContent,
-    });
-
     // event delegation
     this.previewCardContainer.addEventListener('click', event => {
       if (event.target.classList.contains('btn-delete')) return;
 
-      textInputsContainer.innerHTML = '';
+      modalContent.querySelectorAll('.form-container').forEach(elem => elem.remove());
 
-      const [word, example, definition] =
-        this.generateLabels(textInputsContainer);
+      const [formContainer, wordInput, exampleInput, definitionInput] =
+        this.generateForm(modalContent);
+      this.previewCardContainer.after(formContainer);
 
       // get the IDs from the DOM, then get the cardObject
       const clicked = event.target.closest('.card');
 
-      const cardObject = this.cardArray.find(
-        card => card.id === clicked?.dataset.id
-      );
+      const cardObject = this.cardArray.find(card => card.id === clicked?.dataset.id);
       if (clicked) {
-        word.value = cardObject.word;
-        example.value = cardObject.example;
-        definition.value = cardObject.definition;
+        wordInput.value = cardObject.word;
+        exampleInput.value = cardObject.example;
+        definitionInput.value = cardObject.definition;
       }
 
       const submitButton = this.generateSubmitButton(
         false,
-        word,
-        example,
-        definition,
-        textInputsContainer,
+        wordInput,
+        exampleInput,
+        definitionInput,
+        formContainer,
         cardObject
       );
     });
@@ -394,38 +389,19 @@ class DomMaker {
     this.refreshCards();
 
     this.previewCardContainer.innerHTML = '';
-    this.generateCardPreview().forEach(card =>
-      this.previewCardContainer.append(card)
-    );
+    this.generateCardPreview().forEach(card => this.previewCardContainer.append(card));
   }
 
-  generateSubmitButton(
-    doMakeNew,
-    wordInput,
-    exampleInput,
-    definitionInput,
-    parent,
-    card = null
-  ) {
+  generateSubmitButton(doMakeNew, wordInput, exampleInput, definitionInput, parent, card = null) {
     return this.newElement('button', 'submit', {
       class: 'btn-submit',
       parentElement: parent,
       click: () => {
         doMakeNew
-          ? this.newCard(
-              wordInput.value,
-              exampleInput.value,
-              definitionInput.value,
-              {
-                doMount: true,
-              }
-            )
-          : this.updateCard(
-              card,
-              wordInput.value,
-              exampleInput.value,
-              definitionInput.value
-            );
+          ? this.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
+              doMount: true,
+            })
+          : this.updateCard(card, wordInput.value, exampleInput.value, definitionInput.value);
       },
     });
   }
@@ -451,14 +427,9 @@ const maker = new DomMaker();
 
 function generateExampleCards(numberOfCards) {
   for (let i = 0; i < numberOfCards; i++) {
-    maker.newCard(
-      `word no.${i + 1}`,
-      `example sentence no.${i + 1}`,
-      `definition no.${i + 1}`,
-      {
-        doMount: true,
-      }
-    );
+    maker.newCard(`word no.${i + 1}`, `example sentence no.${i + 1}`, `definition no.${i + 1}`, {
+      doMount: true,
+    });
   }
 }
 
@@ -466,9 +437,13 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 
 // TODO
 // add:
+//  the titles at the top for modals
 //  options for settings (changing the colour of cards)
-//  proper modify card options, switching the order of the cards (dragging?), and such
-//  decks of cards
+//  modify modal:
+//    proper modify card options, switching the order of the cards (dragging?), and such
+//    right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side
 // modify:
-//  the amount of arguments passed to functions (make them objects or something)
-//  BUG modify cards - sometimes the input fields stay on despite the deletion (enter edit mode for a card, then delete it)
+//  the functions' arguments:
+//    make the options for arguments to which sometimes empty strings or nulls are passed, since they're almost optional
+//    change the order so it is consistent
+//  merge the generateForm() and generateSubmit button into 1 since they are called in the same functions anyway
