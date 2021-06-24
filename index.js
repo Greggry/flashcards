@@ -3,12 +3,12 @@
 class DomMaker {
   constructor() {
     // make the new mainElement which will be the parent of everything
-    this.mainElement = this.newElement('div', null, {
+    this.mainElement = this.newElement('div', {
       parentElement: document.body,
       class: 'main-element',
     });
 
-    this.cardMountpoint = this.newElement('div', null, {
+    this.cardMountpoint = this.newElement('div', {
       parentElement: this.mainElement,
       class: 'card-mountpoint',
     });
@@ -20,26 +20,28 @@ class DomMaker {
     this.cardArray = [];
 
     // generate buttons for options
-    this.addButton = this.newElement('button', 'new', {
+    this.addButton = this.newElement('button', {
+      content: 'new',
       class: 'options-add-btn',
       click: this.newCardModal.bind(this),
     });
-    this.modifyButton = this.newElement('button', 'modify', {
+    this.modifyButton = this.newElement('button', {
+      content: 'modify',
       class: 'options-modify-btn',
       click: this.modifyModal.bind(this),
     });
-    this.settingsButton = this.newElement('button', 'settings', {
+    this.settingsButton = this.newElement('button', {
+      content: 'settings',
       class: 'options-settings-btn',
       click: this.settingsModal.bind(this),
     });
 
-    this.options = this.newElement(
-      'div',
-      [this.addButton, this.modifyButton, this.settingsButton],
-      {}
-    );
+    this.options = this.newElement('div', {
+      content: [this.addButton, this.modifyButton, this.settingsButton],
+    });
 
-    this.sidePane = this.newElement('div', ['<h1>options</h1>', this.options], {
+    this.sidePane = this.newElement('div', {
+      content: ['<h1>options</h1>', this.options],
       class: 'side-pane',
       parentElement: this.mainElement,
       doPrepend: true, // it needs to be first in the dom
@@ -59,33 +61,32 @@ class DomMaker {
       else parent.appendChild(element);
   }
 
-  newElement(elementType, content, propertiesObj) {
-    if (typeof elementType !== 'string') {
-      return false;
-    }
+  newElement(elementType, propertiesObj) {
+    if (typeof elementType !== 'string') return false;
 
     const element = document.createElement(elementType);
 
     // append content
-    // IIFE recursive function lol
-    (function recursiveCheckAssignContent(content, layer = 0, maxLayer = 3) {
-      if (layer >= maxLayer || !content) return;
+    if (propertiesObj?.content)
+      // IIFE recursive function lol
+      (function recursiveCheckAssignContent(content, layer = 0, maxLayer = 3) {
+        if (layer >= maxLayer || !content) return;
 
-      if (typeof content === 'string')
-        // valid argument for innerHTML
-        element.innerHTML = content;
-      else if (typeof content === 'object' && typeof content.appendChild === 'function')
-        // valid DOM node inside
-        element.appendChild(content);
-      else if (typeof content === 'object') {
-        // array is an object too, this case works for them both
+        if (typeof content === 'string')
+          // valid argument for innerHTML
+          element.innerHTML = content;
+        else if (typeof content === 'object' && typeof content.appendChild === 'function')
+          // valid DOM node inside
+          element.appendChild(content);
+        else if (typeof content === 'object') {
+          // array is an object too, this case works for them both
 
-        const keys = Object.keys(content);
+          const keys = Object.keys(content);
 
-        // run the function for each key
-        keys.forEach(key => recursiveCheckAssignContent(content[key], layer + 1)); // check inside the object (array)
-      }
-    })(content, 0, 3);
+          // run the function for each key
+          keys.forEach(key => recursiveCheckAssignContent(content[key], layer + 1)); // check inside the object (array)
+        }
+      })(propertiesObj.content, 0, 3);
 
     if (!propertiesObj) {
       return element; // we're done
@@ -104,11 +105,13 @@ class DomMaker {
         styleKeys.map(styleProperty => {
           element.style[styleProperty] = propertiesObj.style[styleProperty];
         });
-      } else
+      } else {
+        console.log(propertiesObj);
         element.setAttribute(
           key.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()),
           propertiesObj[key]
         ); // parse to give attributes converted to kebab-case (dataId -> data-id)
+      }
     });
 
     // specified a parent -> append
@@ -131,23 +134,26 @@ class DomMaker {
       ? options.id
       : `${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-    const card = this.newElement('button', null, {
+    const card = this.newElement('button', {
       class: 'card',
       dataId: id,
     });
 
-    const wordElement = this.newElement('h1', word, {
+    const wordElement = this.newElement('h1', {
+      content: word,
       class: 'card-title',
       parentElement: card,
     });
 
-    const exampleElement = this.newElement('p', example, {
+    const exampleElement = this.newElement('p', {
+      content: example,
       class: 'card-example',
       parentElement: card,
     });
 
     // defintion not appended at first
-    const definitionElement = this.newElement('p', definition, {
+    const definitionElement = this.newElement('p', {
+      content: definition,
       class: 'card-definition',
     });
 
@@ -208,17 +214,19 @@ class DomMaker {
 
   newModal(parent, options) {
     // the element to which things are appended
-    const modalContent = this.newElement('div', '', {
+    const modalContent = this.newElement('div', {
       class: 'modal-content',
     });
-    const modal = this.newElement('div', modalContent, {
+    const modal = this.newElement('div', {
+      content: modalContent,
       class: 'modal-window',
     });
 
     this.appendElement(modal, parent, { doMount: options?.doMount });
     this.toggleDisableAndBlur();
 
-    const cancelButton = this.newElement('button', 'cancel', {
+    const cancelButton = this.newElement('button', {
+      content: 'cancel',
       parentElement: modal, // not modalContent, because we want it always at the bottom
       class: 'btn-cancel',
       click: () => {
@@ -232,17 +240,19 @@ class DomMaker {
 
   generateForm(parentElement, options) {
     const createLabel = labelText => {
-      const textField = this.newElement('input', '', {
+      const textField = this.newElement('input', {
         type: 'text',
         class: 'card-input',
       });
 
-      const labelTextElement = this.newElement('span', labelText, {
+      const labelTextElement = this.newElement('span', {
+        content: labelText,
         class: 'label-text',
       });
 
       const labelElement = [
-        this.newElement('label', [labelTextElement, textField], {
+        this.newElement('label', {
+          content: [labelTextElement, textField],
           parentElement: parentElement,
         }),
       ];
@@ -254,11 +264,13 @@ class DomMaker {
     const [exampleLabel, exampleInput] = createLabel('example:');
     const [definitionLabel, definitionInput] = createLabel('definition:');
 
-    const formContainer = this.newElement('div', [wordLabel, exampleLabel, definitionLabel], {
+    const formContainer = this.newElement('div', {
+      content: [wordLabel, exampleLabel, definitionLabel],
       class: 'form-container',
     });
 
-    const submitButton = this.newElement('button', 'submit', {
+    const submitButton = this.newElement('button', {
+      content: 'submit',
       class: 'btn-submit',
       parentElement: formContainer,
       click: () => {
@@ -306,7 +318,7 @@ class DomMaker {
       // push the element to previewcardarray
       previewCardArray.push(cardElement);
 
-      const removeCardButton = this.newElement('button', null, {
+      const removeCardButton = this.newElement('button', {
         class: 'btn-delete',
         parentElement: cardElement,
         click: e => {
@@ -335,7 +347,8 @@ class DomMaker {
     const previewCardArray = this.generateCardPreview();
 
     // prepend all of those items here - so they are at the top of the modal
-    this.previewCardContainer = this.newElement('div', previewCardArray, {
+    this.previewCardContainer = this.newElement('div', {
+      content: previewCardArray,
       class: 'preview-card-container',
       parentElement: modalContent,
       doPrepend: true,
@@ -420,5 +433,4 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 //    proper modify card options, switching the order of the cards (dragging?), and such
 //    right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side
 // modify:
-//  the functions' arguments:
-//    make the content for newElement() optional or something because it's often called with an empty string or null
+//  names modal and modalContent are ambiguous
