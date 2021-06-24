@@ -221,7 +221,16 @@ class DomMaker {
     this.appendElement(doMount, parent, modal);
     this.toggleDisableAndBlur();
 
-    return [modal, modalContent];
+    const cancelButton = this.newElement('button', 'cancel', {
+      parentElement: modal, // not modalContent, because we want it always at the bottom
+      class: 'btn-cancel',
+      click: () => {
+        this.toggleDisableAndBlur();
+        modal.remove();
+      },
+    });
+
+    return modalContent;
   }
 
   toggleDisabled() {
@@ -283,15 +292,13 @@ class DomMaker {
   }
 
   newCardModal() {
-    const [modal, modalContent] = this.newModal(false, document.body);
+    const modalContent = this.newModal(false, document.body);
 
     const [formContainer] = this.generateForm(modalContent, {
       doMakeNew: true,
     });
 
     modalContent.appendChild(formContainer);
-
-    const btnRemove = this.generateRemoveButton(modal, modalContent);
   }
 
   generateCardPreview() {
@@ -336,7 +343,7 @@ class DomMaker {
   }
 
   modifyModal() {
-    const [modal, modalContent] = this.newModal(false, document.body);
+    const modalContent = this.newModal(false, document.body);
     // create an array of the cards with additional functionalities
     const previewCardArray = this.generateCardPreview();
 
@@ -370,16 +377,12 @@ class DomMaker {
         definitionInput.value = cardObject.definition;
       }
     });
-
-    const btnRemove = this.generateRemoveButton(modal, modalContent);
   }
 
   settingsModal() {
-    const [modal, modalContent] = this.newModal(false, document.body);
+    const modalContent = this.newModal(false, document.body);
 
-    modalContent.innerHTML = 'Settings.';
-
-    const btnRemove = this.generateRemoveButton(modal, modalContent);
+    modalContent.innerHTML = 'Add stuff here later!';
   }
 
   updateCard(card, word, example, definition) {
@@ -394,17 +397,6 @@ class DomMaker {
 
     this.previewCardContainer.innerHTML = '';
     this.generateCardPreview().forEach(card => this.previewCardContainer.append(card));
-  }
-
-  generateRemoveButton(element, parent) {
-    return this.newElement('button', 'cancel', {
-      parentElement: parent,
-      class: 'btn-cancel',
-      click: () => {
-        this.toggleDisableAndBlur();
-        element.remove();
-      },
-    });
   }
 
   toggleDisableAndBlur() {
@@ -436,4 +428,3 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 //  the functions' arguments:
 //    make the options for arguments to which sometimes empty strings or nulls are passed, since they're almost optional
 //    change the order so it is consistent
-// generateRemoveButton is used in modals only, combine them too
