@@ -19,6 +19,7 @@ class DomMaker {
     // they store cards and modals
     this.cardArray = [];
 
+    // generate buttons for options
     this.addButton = this.newElement('button', 'new', {
       class: 'options-add-btn',
       click: this.newCardModal.bind(this),
@@ -233,7 +234,7 @@ class DomMaker {
     });
   }
 
-  generateForm(parentElement) {
+  generateForm(parentElement, options) {
     const createLabel = labelText => {
       const textField = this.newElement('input', '', {
         type: 'text',
@@ -261,6 +262,22 @@ class DomMaker {
       class: 'form-container',
     });
 
+    const submitButton = this.newElement('button', 'submit', {
+      class: 'btn-submit',
+      parentElement: formContainer,
+      click: () => {
+        options.doMakeNew
+          ? this.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
+              doMount: true,
+            })
+          : this.updateCard(
+              options.card,
+              wordInput.value,
+              exampleInput.value,
+              definitionInput.value
+            );
+      },
+    });
     // three text input fields, a button to submit the input and a button to close the modal
     return [formContainer, wordInput, exampleInput, definitionInput];
   }
@@ -268,18 +285,11 @@ class DomMaker {
   newCardModal() {
     const [modal, modalContent] = this.newModal(false, document.body);
 
-    const [formContainer, wordInput, exampleInput, definitionInput] =
-      this.generateForm(modalContent);
+    const [formContainer] = this.generateForm(modalContent, {
+      doMakeNew: true,
+    });
 
     modalContent.appendChild(formContainer);
-
-    const btnSubmit = this.generateSubmitButton(
-      true,
-      wordInput,
-      exampleInput,
-      definitionInput,
-      formContainer
-    );
 
     const btnRemove = this.generateRemoveButton(modal, modalContent);
   }
@@ -343,28 +353,22 @@ class DomMaker {
 
       modalContent.querySelectorAll('.form-container').forEach(elem => elem.remove());
 
-      const [formContainer, wordInput, exampleInput, definitionInput] =
-        this.generateForm(modalContent);
-      this.previewCardContainer.after(formContainer);
-
       // get the IDs from the DOM, then get the cardObject
       const clicked = event.target.closest('.card');
-
       const cardObject = this.cardArray.find(card => card.id === clicked?.dataset.id);
+
+      const [formContainer, wordInput, exampleInput, definitionInput] = this.generateForm(
+        modalContent,
+        {
+          card: cardObject,
+        }
+      );
+      this.previewCardContainer.after(formContainer);
       if (clicked) {
         wordInput.value = cardObject.word;
         exampleInput.value = cardObject.example;
         definitionInput.value = cardObject.definition;
       }
-
-      const submitButton = this.generateSubmitButton(
-        false,
-        wordInput,
-        exampleInput,
-        definitionInput,
-        formContainer,
-        cardObject
-      );
     });
 
     const btnRemove = this.generateRemoveButton(modal, modalContent);
@@ -390,20 +394,6 @@ class DomMaker {
 
     this.previewCardContainer.innerHTML = '';
     this.generateCardPreview().forEach(card => this.previewCardContainer.append(card));
-  }
-
-  generateSubmitButton(doMakeNew, wordInput, exampleInput, definitionInput, parent, card = null) {
-    return this.newElement('button', 'submit', {
-      class: 'btn-submit',
-      parentElement: parent,
-      click: () => {
-        doMakeNew
-          ? this.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
-              doMount: true,
-            })
-          : this.updateCard(card, wordInput.value, exampleInput.value, definitionInput.value);
-      },
-    });
   }
 
   generateRemoveButton(element, parent) {
@@ -446,4 +436,4 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 //  the functions' arguments:
 //    make the options for arguments to which sometimes empty strings or nulls are passed, since they're almost optional
 //    change the order so it is consistent
-//  merge the generateForm() and generateSubmit button into 1 since they are called in the same functions anyway
+// generateRemoveButton is used in modals only, combine them too
