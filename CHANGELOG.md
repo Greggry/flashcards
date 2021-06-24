@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.3 - 2021-06-24
+
+<hr />
+
+### Added:
+
+- the titles to modals
+- BEM naming convention (css)
+
+### Changed:
+
+- reorganised the code
+- combined functions together (the ones that were called once / after each other)
+- reorganised functions' arguments (flags now are passed additional options)
+- changed variables to be more descriptive (example: isEnabled for booleans)
+- iterable.forEach() instead of for loops
+- unified the way modals are shown
+
 ## 0.1.2 - 2021-06-21
 
 <hr />
