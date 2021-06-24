@@ -22,7 +22,7 @@ body {
   color: $primary;
 }
 
-.main-element {
+.root-element {
   // add grid instead
   display: grid;
   grid-template-columns: calc(20rem + 15px) auto;
@@ -40,11 +40,11 @@ body {
     padding: 15px;
     text-align: center;
 
-    h1 {
+    &__title {
       font-size: 3rem;
     }
 
-    button {
+    &__options .btn {
       background-color: $secondary;
       color: $primary;
       border: 2px solid $primary;
@@ -55,7 +55,7 @@ body {
       cursor: pointer;
     }
 
-    button:disabled {
+    .btn:disabled {
       cursor: default;
     }
   }
@@ -87,16 +87,16 @@ body {
     cursor: default;
   }
 
-  .card-title {
+  &__title {
     font-size: 3rem;
     font-weight: bold;
   }
 
-  .card-example {
+  &__example {
     font-weight: bold;
   }
 
-  &.small {
+  &--small {
     width: 4rem;
     height: 6rem;
     padding: 5px;
@@ -106,15 +106,16 @@ body {
 
     font-size: 0.6rem;
 
-    .card-title {
-      font-size: 0.7rem;
+    * {
+      font-size: inherit;
     }
 
-    .btn-delete {
+    &__btn-delete {
       display: flex;
       justify-content: center;
       align-items: center;
       font-weight: bold;
+      font-size: 2rem;
       border: 2px solid $warning;
       color: $warning;
       background-color: $primary;
@@ -129,15 +130,15 @@ body {
       top: 0;
       right: 0;
       transform: translate(1rem, -0.7rem);
-    }
 
-    .btn-delete::after {
-      content: '×';
+      &::after {
+        content: '×';
+      }
     }
   }
 }
 
-.modal-window {
+.modal {
   /* should take up almost the whole window */
   background-color: $primary;
   width: 60%;
@@ -155,20 +156,21 @@ body {
   font-size: 2rem;
   border-radius: 5px;
 
-  .preview-card-container {
+  &__preview-container {
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
   }
 
-  label {
+  &__label {
     display: flex;
     align-items: center;
 
-    .label-text {
+    &__text {
       width: 10rem;
     }
 
-    input[type='text'] {
+    &__input {
       font-size: 1.3rem;
       width: 15rem;
       height: 2rem;
@@ -176,7 +178,7 @@ body {
     }
   }
 
-  button {
+  &__btn {
     display: block;
     cursor: pointer;
 

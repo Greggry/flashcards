@@ -2,14 +2,14 @@
 
 class DomMaker {
   constructor() {
-    // make the new mainElement which will be the parent of everything
-    this.mainElement = this.newElement('div', {
+    // the rootElement will be the parent of everything (but modals)
+    this.rootElement = this.newElement('div', {
       parentElement: document.body,
-      class: 'main-element',
+      class: 'root-element',
     });
 
     this.cardMountpoint = this.newElement('div', {
-      parentElement: this.mainElement,
+      parentElement: this.rootElement,
       class: 'card-mountpoint',
     });
 
@@ -22,28 +22,33 @@ class DomMaker {
     // generate buttons for options
     this.addButton = this.newElement('button', {
       content: 'new',
-      class: 'options-add-btn',
+      class: 'btn options__add-btn',
       click: this.newCardModal.bind(this),
     });
     this.modifyButton = this.newElement('button', {
       content: 'modify',
-      class: 'options-modify-btn',
+      class: 'btn options__modify-btn',
       click: this.modifyModal.bind(this),
     });
     this.settingsButton = this.newElement('button', {
       content: 'settings',
-      class: 'options-settings-btn',
+      class: 'btn options__settings-btn',
       click: this.settingsModal.bind(this),
     });
 
+    this.sidePaneTitle = this.newElement('h1', {
+      content: 'options',
+      class: 'side-pane__title',
+    });
     this.options = this.newElement('div', {
       content: [this.addButton, this.modifyButton, this.settingsButton],
+      class: 'side-pane__options',
     });
 
     this.sidePane = this.newElement('div', {
-      content: ['<h1>options</h1>', this.options],
+      content: [this.sidePaneTitle, this.options],
       class: 'side-pane',
-      parentElement: this.mainElement,
+      parentElement: this.rootElement,
       doPrepend: true, // it needs to be first in the dom
     });
   }
@@ -105,13 +110,11 @@ class DomMaker {
         styleKeys.map(styleProperty => {
           element.style[styleProperty] = propertiesObj.style[styleProperty];
         });
-      } else {
-        console.log(propertiesObj);
+      } else
         element.setAttribute(
           key.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()),
           propertiesObj[key]
         ); // parse to give attributes converted to kebab-case (dataId -> data-id)
-      }
     });
 
     // specified a parent -> append
@@ -141,20 +144,20 @@ class DomMaker {
 
     const wordElement = this.newElement('h1', {
       content: word,
-      class: 'card-title',
+      class: 'card__title',
       parentElement: card,
     });
 
     const exampleElement = this.newElement('p', {
       content: example,
-      class: 'card-example',
+      class: 'card__example',
       parentElement: card,
     });
 
     // defintion not appended at first
     const definitionElement = this.newElement('p', {
       content: definition,
-      class: 'card-definition',
+      class: 'card__definition',
     });
 
     if (options.doMount || options.parentElement)
@@ -219,7 +222,7 @@ class DomMaker {
     });
     const modal = this.newElement('div', {
       content: modalContent,
-      class: 'modal-window',
+      class: 'modal',
     });
 
     this.appendElement(modal, parent, { doMount: options?.doMount });
@@ -228,7 +231,7 @@ class DomMaker {
     const cancelButton = this.newElement('button', {
       content: 'cancel',
       parentElement: modal, // not modalContent, because we want it always at the bottom
-      class: 'btn-cancel',
+      class: 'modal__btn',
       click: () => {
         this.toggleDisableAndBlur();
         modal.remove();
@@ -242,18 +245,19 @@ class DomMaker {
     const createLabel = labelText => {
       const textField = this.newElement('input', {
         type: 'text',
-        class: 'card-input',
+        class: 'modal__label__input',
       });
 
       const labelTextElement = this.newElement('span', {
         content: labelText,
-        class: 'label-text',
+        class: 'modal__label__text',
       });
 
       const labelElement = [
         this.newElement('label', {
           content: [labelTextElement, textField],
           parentElement: parentElement,
+          class: 'modal__label',
         }),
       ];
 
@@ -271,7 +275,7 @@ class DomMaker {
 
     const submitButton = this.newElement('button', {
       content: 'submit',
-      class: 'btn-submit',
+      class: 'modal__btn',
       parentElement: formContainer,
       click: () => {
         options.doMakeNew
@@ -312,14 +316,13 @@ class DomMaker {
         id: cardObject.id,
       });
 
-      cardElement.classList.add('small');
+      cardElement.classList.add('card--small');
       cardElement.disabled = false;
 
-      // push the element to previewcardarray
       previewCardArray.push(cardElement);
 
       const removeCardButton = this.newElement('button', {
-        class: 'btn-delete',
+        class: 'card--small__btn-delete',
         parentElement: cardElement,
         click: e => {
           // remove from cardArray
@@ -349,14 +352,14 @@ class DomMaker {
     // prepend all of those items here - so they are at the top of the modal
     this.previewCardContainer = this.newElement('div', {
       content: previewCardArray,
-      class: 'preview-card-container',
+      class: 'modal__preview-container',
       parentElement: modalContent,
       doPrepend: true,
     });
 
     // event delegation
     this.previewCardContainer.addEventListener('click', event => {
-      if (event.target.classList.contains('btn-delete')) return;
+      if (event.target.classList.contains('card--small__btn-delete')) return;
 
       modalContent.querySelectorAll('.form-container').forEach(elem => elem.remove());
 
@@ -401,7 +404,7 @@ class DomMaker {
   }
 
   toggleDisableAndBlur() {
-    const childrenArray = document.querySelectorAll('.main-element *');
+    const childrenArray = document.querySelectorAll('.root-element *');
 
     this.isEachChildDisabled = !this.isEachChildDisabled;
 
@@ -409,7 +412,7 @@ class DomMaker {
       child.disabled = this.isEachChildDisabled; // first it will disable the children then enable and so on
     });
 
-    this.mainElement.classList.toggle('blurred');
+    this.rootElement.classList.toggle('blurred');
   }
 }
 
@@ -434,3 +437,4 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 //    right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side
 // modify:
 //  names modal and modalContent are ambiguous
+//  do event delegation for card flipping

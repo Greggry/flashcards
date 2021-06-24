@@ -16,24 +16,24 @@ body {
   color: #f0f0f0;
 }
 
-.main-element {
+.root-element {
   display: grid;
   grid-template-columns: calc(20rem + 15px) auto;
   width: 100vw;
   max-width: 100%;
   height: 100vh;
 }
-.main-element .side-pane {
+.root-element .side-pane {
   width: 20rem;
   height: 100%;
   background-color: #161412;
   padding: 15px;
   text-align: center;
 }
-.main-element .side-pane h1 {
+.root-element .side-pane__title {
   font-size: 3rem;
 }
-.main-element .side-pane button {
+.root-element .side-pane__options .btn {
   background-color: #1e1b19;
   color: #f0f0f0;
   border: 2px solid #f0f0f0;
@@ -43,10 +43,10 @@ body {
   font-size: 1.3rem;
   cursor: pointer;
 }
-.main-element .side-pane button:disabled {
+.root-element .side-pane .btn:disabled {
   cursor: default;
 }
-.main-element .card-mountpoint {
+.root-element .card-mountpoint {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -71,14 +71,14 @@ body {
 .card:disabled {
   cursor: default;
 }
-.card .card-title {
+.card__title {
   font-size: 3rem;
   font-weight: bold;
 }
-.card .card-example {
+.card__example {
   font-weight: bold;
 }
-.card.small {
+.card--small {
   width: 4rem;
   height: 6rem;
   padding: 5px;
@@ -86,14 +86,15 @@ body {
   position: relative;
   font-size: 0.6rem;
 }
-.card.small .card-title {
-  font-size: 0.7rem;
+.card--small * {
+  font-size: inherit;
 }
-.card.small .btn-delete {
+.card--small__btn-delete {
   display: flex;
   justify-content: center;
   align-items: center;
   font-weight: bold;
+  font-size: 2rem;
   border: 2px solid #b80c09;
   color: #b80c09;
   background-color: #f0f0f0;
@@ -106,11 +107,11 @@ body {
   right: 0;
   transform: translate(1rem, -0.7rem);
 }
-.card.small .btn-delete::after {
+.card--small__btn-delete::after {
   content: "×";
 }
 
-.modal-window {
+.modal {
   /* should take up almost the whole window */
   background-color: #f0f0f0;
   width: 60%;
@@ -126,24 +127,25 @@ body {
   font-size: 2rem;
   border-radius: 5px;
 }
-.modal-window .preview-card-container {
+.modal__preview-container {
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
 }
-.modal-window label {
+.modal__label {
   display: flex;
   align-items: center;
 }
-.modal-window label .label-text {
+.modal__label__text {
   width: 10rem;
 }
-.modal-window label input[type=text] {
+.modal__label__input {
   font-size: 1.3rem;
   width: 15rem;
   height: 2rem;
   margin: 20px;
 }
-.modal-window button {
+.modal__btn {
   display: block;
   cursor: pointer;
   width: 80%;
