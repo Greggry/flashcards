@@ -361,14 +361,15 @@ class DomMaker {
       const clicked = event.target.closest('.card');
       const cardObject = this.cardArray.find(card => card.id === clicked?.dataset.id);
 
-      const [formContainer, wordInput, exampleInput, definitionInput] = this.generateForm(
-        modalContent,
-        {
-          card: cardObject,
-        }
-      );
-      this.previewCardContainer.after(formContainer);
       if (clicked) {
+        const [formContainer, wordInput, exampleInput, definitionInput] = this.generateForm(
+          modalContent,
+          {
+            card: cardObject,
+          }
+        );
+        this.previewCardContainer.after(formContainer);
+
         wordInput.value = cardObject.word;
         exampleInput.value = cardObject.example;
         definitionInput.value = cardObject.definition;
@@ -424,4 +425,3 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 // modify:
 //  the functions' arguments:
 //    make the content for newElement() optional or something because it's often called with an empty string or null
-// BUG: clicking on thye modify modal's small card's parent causes the form to appear
