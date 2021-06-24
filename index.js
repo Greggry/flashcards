@@ -46,16 +46,16 @@ class DomMaker {
     });
   }
 
-  appendElement(doMount, parent, element, doPrepend = false) {
-    // true -> append to the default element
-    if (doMount === true) this.cardMountpoint.appendChild(element);
+  appendElement(element, parent, options) {
+    // if true -> append to the default element (cards)
+    if (options.doMount === true) this.cardMountpoint.appendChild(element);
     else if (
       typeof parent === 'object' &&
       typeof parent.appendChild === 'function' &&
       typeof element === 'object' &&
       typeof element.appendChild === 'function'
     )
-      if (doPrepend) parent.prepend(element);
+      if (options.doPrepend === true) parent.prepend(element);
       else parent.appendChild(element);
   }
 
@@ -114,10 +114,9 @@ class DomMaker {
     // specified a parent -> append
     if (propertiesObj.hasOwnProperty('parentElement'))
       this.appendElement(
-        false,
-        propertiesObj.parentElement,
         element,
-        propertiesObj.doPrepend // ignore if not set, if set to true it will be inserted as the first child of its parent
+        propertiesObj.parentElement,
+        { doPrepend: propertiesObj.doPrepend } // ignore if not set, if set to true it will be inserted as the first child of its parent
       );
 
     // specified an event listener -> add it
@@ -153,7 +152,7 @@ class DomMaker {
     });
 
     if (options.doMount || options.parentElement)
-      this.appendElement(options.doMount, options.parentElement, card);
+      this.appendElement(card, options.parentElement, { doMount: options.doMount });
 
     // flippable unless specified otherwise
     if (!(options.isFlippable === false)) {
@@ -195,8 +194,6 @@ class DomMaker {
   }
 
   refreshCards(mountpoint = this.cardMountpoint) {
-    // card mountpoint is always this.cardMountpoint
-
     // remove items from the mountpoint
     mountpoint.innerHTML = '';
 
@@ -209,7 +206,7 @@ class DomMaker {
     });
   }
 
-  newModal(doMount, parent) {
+  newModal(parent, options) {
     // the element to which things are appended
     const modalContent = this.newElement('div', '', {
       class: 'modal-content',
@@ -218,7 +215,7 @@ class DomMaker {
       class: 'modal-window',
     });
 
-    this.appendElement(doMount, parent, modal);
+    this.appendElement(modal, parent, { doMount: options?.doMount });
     this.toggleDisableAndBlur();
 
     const cancelButton = this.newElement('button', 'cancel', {
@@ -292,7 +289,7 @@ class DomMaker {
   }
 
   newCardModal() {
-    const modalContent = this.newModal(false, document.body);
+    const modalContent = this.newModal(document.body);
 
     const [formContainer] = this.generateForm(modalContent, {
       doMakeNew: true,
@@ -343,7 +340,7 @@ class DomMaker {
   }
 
   modifyModal() {
-    const modalContent = this.newModal(false, document.body);
+    const modalContent = this.newModal(document.body);
     // create an array of the cards with additional functionalities
     const previewCardArray = this.generateCardPreview();
 
@@ -360,7 +357,7 @@ class DomMaker {
 
       modalContent.querySelectorAll('.form-container').forEach(elem => elem.remove());
 
-      // get the IDs from the DOM, then get the cardObject
+      // get the IDs from the DOM, then get the object from this.cardArray
       const clicked = event.target.closest('.card');
       const cardObject = this.cardArray.find(card => card.id === clicked?.dataset.id);
 
@@ -380,17 +377,17 @@ class DomMaker {
   }
 
   settingsModal() {
-    const modalContent = this.newModal(false, document.body);
+    const modalContent = this.newModal(document.body);
 
     modalContent.innerHTML = 'Add stuff here later!';
   }
 
-  updateCard(card, word, example, definition) {
+  updateCard(card, newWord, newExample, newDefinition) {
     if (!card) return;
 
-    card.word = word;
-    card.example = example;
-    card.definition = definition;
+    card.word = newWord;
+    card.example = newExample;
+    card.definition = newDefinition;
 
     // update UI
     this.refreshCards();
@@ -426,5 +423,5 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 //    right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side
 // modify:
 //  the functions' arguments:
-//    make the options for arguments to which sometimes empty strings or nulls are passed, since they're almost optional
-//    change the order so it is consistent
+//    make the content for newElement() optional or something because it's often called with an empty string or null
+// BUG: clicking on thye modify modal's small card's parent causes the form to appear
