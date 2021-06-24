@@ -230,16 +230,6 @@ class DomMaker {
     return modalContent;
   }
 
-  toggleDisabled() {
-    const childrenArray = document.querySelectorAll('.main-element *');
-
-    this.isEachChildDisabled = !this.isEachChildDisabled;
-
-    childrenArray.forEach(child => {
-      child.disabled = this.isEachChildDisabled; // first it will disable the children then enable and so on
-    });
-  }
-
   generateForm(parentElement, options) {
     const createLabel = labelText => {
       const textField = this.newElement('input', '', {
@@ -398,7 +388,14 @@ class DomMaker {
   }
 
   toggleDisableAndBlur() {
-    this.toggleDisabled();
+    const childrenArray = document.querySelectorAll('.main-element *');
+
+    this.isEachChildDisabled = !this.isEachChildDisabled;
+
+    childrenArray.forEach(child => {
+      child.disabled = this.isEachChildDisabled; // first it will disable the children then enable and so on
+    });
+
     this.mainElement.classList.toggle('blurred');
   }
 }
