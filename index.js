@@ -78,8 +78,8 @@ class DomMaker {
         if (layer >= maxLayer || !content) return;
 
         if (typeof content === 'string')
-          // valid argument for innerHTML
-          element.innerHTML = content;
+          // valid argument for innerHTML. += so it doesn't delete anything added previously
+          element.innerHTML += content;
         else if (typeof content === 'object' && typeof content.appendChild === 'function')
           // valid DOM node inside
           element.appendChild(content);
@@ -216,27 +216,32 @@ class DomMaker {
   }
 
   newModal(parent, options) {
-    // the element to which things are appended
-    const modalContent = this.newElement('div', {
-      class: 'modal-content',
-    });
-    const modal = this.newElement('div', {
-      content: modalContent,
-      class: 'modal',
+    this.toggleDisableAndBlur();
+
+    const title = this.newElement('div', {
+      content: [`<h1>${options?.title}</h1>` ?? '', '<hr />'],
+      class: 'modal__title',
     });
 
-    this.appendElement(modal, parent, { doMount: options?.doMount });
-    this.toggleDisableAndBlur();
+    // the element to which things are appended, the outside layer is for the cancel button and the modal title
+    const modalContent = this.newElement('div', {
+      class: 'modal__content',
+    });
 
     const cancelButton = this.newElement('button', {
       content: 'cancel',
-      parentElement: modal, // not modalContent, because we want it always at the bottom
       class: 'modal__btn',
       click: () => {
         this.toggleDisableAndBlur();
         modal.remove();
       },
     });
+
+    const modal = this.newElement('div', {
+      content: [title, modalContent, cancelButton],
+      class: 'modal',
+    });
+    this.appendElement(modal, parent, { doMount: options?.doMount });
 
     return modalContent;
   }
@@ -295,7 +300,9 @@ class DomMaker {
   }
 
   newCardModal() {
-    const modalContent = this.newModal(document.body);
+    const modalContent = this.newModal(document.body, {
+      title: 'add a new card',
+    });
 
     const [formContainer] = this.generateForm(modalContent, {
       doMakeNew: true,
@@ -324,14 +331,14 @@ class DomMaker {
       const removeCardButton = this.newElement('button', {
         class: 'card--small__btn-delete',
         parentElement: cardElement,
-        click: e => {
+        click: () => {
           // remove from cardArray
           this.cardArray.includes(cardObject)
             ? this.cardArray.splice(this.cardArray.indexOf(cardObject), 1)
             : '';
 
           // if there are labels shown, remove them from the DOM
-          cardElement.closest('.modal-content').querySelector('.form-container')?.remove();
+          cardElement.closest('.modal__content').querySelector('.form-container')?.remove();
 
           // remove preview card
           cardElement.remove();
@@ -345,7 +352,9 @@ class DomMaker {
   }
 
   modifyModal() {
-    const modalContent = this.newModal(document.body);
+    const modalContent = this.newModal(document.body, {
+      title: 'modify a card',
+    });
     // create an array of the cards with additional functionalities
     const previewCardArray = this.generateCardPreview();
 
@@ -384,7 +393,9 @@ class DomMaker {
   }
 
   settingsModal() {
-    const modalContent = this.newModal(document.body);
+    const modalContent = this.newModal(document.body, {
+      title: 'settings',
+    });
 
     modalContent.innerHTML = 'Add stuff here later!';
   }

@@ -156,6 +156,17 @@ body {
   font-size: 2rem;
   border-radius: 5px;
 
+  &__title {
+    margin-bottom: 20px;
+
+    h1 {
+      font-size: 2rem;
+      height: 4rem;
+      display: inline; // to remove the empty space created by browsers
+      text-transform: capitalize;
+    }
+  }
+
   &__preview-container {
     display: flex;
     justify-content: center;

@@ -127,6 +127,15 @@ body {
   font-size: 2rem;
   border-radius: 5px;
 }
+.modal__title {
+  margin-bottom: 20px;
+}
+.modal__title h1 {
+  font-size: 2rem;
+  height: 4rem;
+  display: inline;
+  text-transform: capitalize;
+}
 .modal__preview-container {
   display: flex;
   justify-content: center;
