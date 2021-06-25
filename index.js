@@ -13,8 +13,9 @@ class DomMaker {
       class: 'card-mountpoint',
     });
     this.cardMountpoint.addEventListener('click', e => {
-      // BUG clicking on parent causes an error: cannot read property isFlipped of undefined
       const cardElement = e.target.closest('.card');
+
+      if (!cardElement) return; // no card was clicked
 
       const cardObject = this.cardArray.find(card => card.id === cardElement?.dataset.id);
 
@@ -135,8 +136,6 @@ class DomMaker {
     keys.forEach(key => {
       // accepts only string with exceptions
       if (typeof propertiesObj[key] !== 'string' || key === 'content') return; // same as 'continue' in a for loop
-
-      console.log(typeof key, propertiesObj);
 
       // check to assign styles
       if (key === 'style') {
