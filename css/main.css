@@ -1,4 +1,9 @@
 @charset "UTF-8";
+:root {
+  --cardForegroundColor: #f0f0f0;
+  --cardBackgroundColor: #370096;
+}
+
 html {
   box-sizing: border-box;
   font-family: Arial, sans-serif;
@@ -60,9 +65,9 @@ body {
   align-items: center;
   width: 18rem;
   height: 24rem;
-  color: #f0f0f0;
-  background-color: #370096;
-  border: 2px solid #f0f0f0;
+  color: var(--cardForegroundColor);
+  background-color: var(--cardBackgroundColor);
+  border: 2px solid var(--cardForegroundColor);
   margin: 10px;
   word-break: break-word;
   padding: 10px;
@@ -161,6 +166,10 @@ body {
   height: 50px;
   margin: 25px auto;
   font-size: 2rem;
+}
+
+.color-label {
+  margin: 20px;
 }
 
 .blurred {

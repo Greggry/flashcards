@@ -5,6 +5,12 @@ $good: #0a8754;
 $auxiliary1: #161412;
 $auxiliary2: #370096;
 
+:root {
+  // variables which user can change - like that by default
+  --cardForegroundColor: #{$primary};
+  --cardBackgroundColor: #{$auxiliary2};
+}
+
 html {
   box-sizing: border-box;
   font-family: Arial, sans-serif;
@@ -75,9 +81,9 @@ body {
   align-items: center;
   width: 18rem;
   height: 24rem;
-  color: $primary;
-  background-color: $auxiliary2;
-  border: 2px solid $primary;
+  color: var(--cardForegroundColor);
+  background-color: var(--cardBackgroundColor);
+  border: 2px solid var(--cardForegroundColor);
   margin: 10px;
   word-break: break-word;
   padding: 10px;
@@ -199,6 +205,10 @@ body {
 
     font-size: 2rem;
   }
+}
+
+.color-label {
+  margin: 20px;
 }
 
 .blurred {

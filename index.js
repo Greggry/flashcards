@@ -405,7 +405,41 @@ class DomMaker {
       title: 'settings',
     });
 
-    modalContent.innerHTML = 'Add stuff here later!';
+    // changing colour schemes
+    // create a window with which the user changes css variables responsible for colours
+    // --primary and ---secondary are the colour variables used
+
+    const colorSchemeInputs = this.newElement('div', {
+      class: 'color-schemes',
+      parentElement: modalContent,
+    });
+
+    const generateColorSchemeLabel = (labelContent, cssVariableString) => {
+      const labelElement = this.newElement('label', {
+        class: 'color-label',
+        content: labelContent,
+        parentElement: colorSchemeInputs,
+      });
+
+      const colorButton = this.newElement('button', {
+        class: 'color-label__button',
+        content: '#00000',
+        parentElement: labelElement,
+      });
+
+      labelElement.addEventListener('click', e => {
+        const colorButton = e.target.closest('.color-label__button');
+
+        if (!colorButton) return; // button not found
+
+        document.documentElement.style.setProperty(cssVariableString, '#000000');
+      });
+
+      return labelElement;
+    };
+
+    const primaryColor = generateColorSchemeLabel('primary colour:', '--cardForegroundColor');
+    const secondaryColor = generateColorSchemeLabel('secondary colour:', '--cardBackgroundColor');
   }
 
   updateCard(card, newWord, newExample, newDefinition) {
@@ -452,4 +486,4 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 //  options for settings (changing the colour of cards)
 //  modify modal:
 //    proper modify card options, switching the order of the cards (dragging?), and such
-//    right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side
+//    addCardModal too: right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side
