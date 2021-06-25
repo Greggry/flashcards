@@ -13,6 +13,7 @@ class DomMaker {
       class: 'card-mountpoint',
     });
     this.cardMountpoint.addEventListener('click', e => {
+      // BUG clicking on parent causes an error: cannot read property isFlipped of undefined
       const cardElement = e.target.closest('.card');
 
       const cardObject = this.cardArray.find(card => card.id === cardElement?.dataset.id);
@@ -132,7 +133,10 @@ class DomMaker {
     const keys = Object.keys(propertiesObj); // list of property names
 
     keys.forEach(key => {
-      if (typeof propertiesObj[key] !== 'string' && key !== 'style') return; // same as 'continue' in a for loop
+      // accepts only string with exceptions
+      if (typeof propertiesObj[key] !== 'string' || key === 'content') return; // same as 'continue' in a for loop
+
+      console.log(typeof key, propertiesObj);
 
       // check to assign styles
       if (key === 'style') {
@@ -183,12 +187,6 @@ class DomMaker {
       content: example,
       class: 'card__example',
       parentElement: card,
-    });
-
-    // defintion not appended at first
-    const definitionElement = this.newElement('p', {
-      content: definition,
-      class: 'card__definition',
     });
 
     if (options.doMount || options.parentElement)
@@ -456,8 +454,3 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 //  modify modal:
 //    proper modify card options, switching the order of the cards (dragging?), and such
 //    right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side
-// modify:
-//  names modal and modalContent are ambiguous
-//  do event delegation for card flipping
-// BUG the content is passed as an argument
-// BUG the card id changes when updating a card
