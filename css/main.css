@@ -168,8 +168,24 @@ body {
   font-size: 2rem;
 }
 
-.color-label {
-  margin: 20px;
+.color-schemes {
+  display: flex;
+}
+.color-schemes .color-label {
+  padding: 20px;
+  display: block;
+}
+.color-schemes .color-label:hover {
+  cursor: pointer;
+  opacity: 0.8;
+  background-color: #e0e0e0;
+}
+.color-schemes .color-label__color-tile {
+  display: inline-block;
+  width: 5rem;
+}
+.color-schemes .color-label--active {
+  border: 3px solid #1e1b19;
 }
 
 .blurred {

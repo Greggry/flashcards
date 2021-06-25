@@ -135,7 +135,7 @@ class DomMaker {
 
     keys.forEach(key => {
       // accepts only string with exceptions
-      if (typeof propertiesObj[key] !== 'string' || key === 'content') return; // same as 'continue' in a for loop
+      if ((typeof propertiesObj[key] !== 'string' && key !== 'style') || key === 'content') return; // same as 'continue' in a for loop
 
       // check to assign styles
       if (key === 'style') {
@@ -409,37 +409,76 @@ class DomMaker {
     // create a window with which the user changes css variables responsible for colours
     // --primary and ---secondary are the colour variables used
 
-    const colorSchemeInputs = this.newElement('div', {
+    const colorSchemesContainer = this.newElement('div', {
       class: 'color-schemes',
       parentElement: modalContent,
     });
 
-    const generateColorSchemeLabel = (labelContent, cssVariableString) => {
+    const generateColorSchemeLabel = (color1, color2) => {
       const labelElement = this.newElement('label', {
         class: 'color-label',
-        content: labelContent,
-        parentElement: colorSchemeInputs,
+        parentElement: colorSchemesContainer,
       });
 
-      const colorButton = this.newElement('button', {
-        class: 'color-label__button',
-        content: '#00000',
+      const primaryColor = this.newElement('div', {
+        class: 'color-label__color-tile',
+        dataColor: color1,
+        content: 'fg',
         parentElement: labelElement,
+        style: {
+          backgroundColor: color1,
+          color: color2, // so there's always contrast
+        },
       });
 
-      labelElement.addEventListener('click', e => {
-        const colorButton = e.target.closest('.color-label__button');
-
-        if (!colorButton) return; // button not found
-
-        document.documentElement.style.setProperty(cssVariableString, '#000000');
+      const secondaryColor = this.newElement('div', {
+        class: 'color-label__color-tile',
+        dataColor: color2,
+        content: 'bg',
+        parentElement: labelElement,
+        style: {
+          backgroundColor: color2,
+          color: color1,
+        },
       });
 
       return labelElement;
     };
 
-    const primaryColor = generateColorSchemeLabel('primary colour:', '--cardForegroundColor');
-    const secondaryColor = generateColorSchemeLabel('secondary colour:', '--cardBackgroundColor');
+    if (!this.colorSchemes) {
+      this.colorSchemes = [
+        ['#161616', '#d8d8d8'],
+        ['#d8d8d8', '#161616'],
+      ];
+    }
+
+    this.colorSchemes.forEach(colorScheme =>
+      generateColorSchemeLabel(colorScheme[0], colorScheme[1])
+    );
+
+    colorSchemesContainer.addEventListener('click', e => {
+      const colorLabel = e.target.closest('.color-label');
+
+      if (!colorLabel) return; // button not found
+
+      const [primaryColorElement, secondaryColorElement] = colorLabel.querySelectorAll(
+        '.color-label__color-tile'
+      );
+
+      document.documentElement.style.setProperty(
+        '--cardForegroundColor',
+        primaryColorElement.dataset.color
+      );
+      document.documentElement.style.setProperty(
+        '--cardBackgroundColor',
+        secondaryColorElement.dataset.color
+      );
+
+      [...colorLabel.parentElement.children].forEach(child =>
+        child.classList.remove('color-label--active')
+      );
+      colorLabel.classList.add('color-label--active');
+    });
   }
 
   updateCard(card, newWord, newExample, newDefinition) {
