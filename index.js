@@ -12,6 +12,37 @@ class DomMaker {
       parentElement: this.rootElement,
       class: 'card-mountpoint',
     });
+    this.cardMountpoint.addEventListener('click', e => {
+      const cardElement = e.target.closest('.card');
+
+      const cardObject = this.cardArray.find(card => card.id === cardElement?.dataset.id);
+
+      if (!cardObject.isFlipped) {
+        cardElement.innerHTML = '';
+
+        const definition = this.newElement('p', {
+          content: cardObject.definition,
+        });
+
+        cardElement.appendChild(definition);
+      } else {
+        cardElement.innerHTML = '';
+
+        const wordElement = this.newElement('h1', {
+          content: cardObject.word,
+          class: 'card__title',
+        });
+        const exampleElement = this.newElement('p', {
+          content: cardObject.example,
+          class: 'card__example',
+        });
+
+        cardElement.appendChild(wordElement);
+        cardElement.appendChild(exampleElement);
+      }
+
+      cardObject.isFlipped = !cardObject.isFlipped;
+    });
 
     // this flag tracks the state of the children of main element
     this.isEachChildDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
@@ -163,29 +194,8 @@ class DomMaker {
     if (options.doMount || options.parentElement)
       this.appendElement(card, options.parentElement, { doMount: options.doMount });
 
-    // flippable unless specified otherwise
-    if (!(options.isFlippable === false)) {
-      card.isFlipped = false; // isFlipped to the definition side
-      card.flip = () => {
-        if (!card.isFlipped) {
-          card.removeChild(wordElement);
-          card.removeChild(exampleElement);
-
-          card.appendChild(definitionElement);
-        } else {
-          card.removeChild(definitionElement);
-
-          card.appendChild(wordElement);
-          card.appendChild(exampleElement);
-        }
-
-        card.isFlipped = !card.isFlipped;
-      };
-
-      card.addEventListener('click', () => {
-        card.flip();
-      });
-    }
+    // initial card property
+    const isFlipped = false;
 
     if (!options.doRerender)
       // the card is loaded for the first time
@@ -194,9 +204,10 @@ class DomMaker {
         word,
         example,
         definition,
+        isFlipped,
       });
 
-    // state of the card should match the disabled
+    // state of the card should match the others
     card.disabled = this.isEachChildDisabled;
 
     return card;
@@ -211,6 +222,7 @@ class DomMaker {
       this.newCard(item.word, item.example, item.definition, {
         doMount: true,
         doRerender: true,
+        id: item.id,
       });
     });
   }
@@ -317,7 +329,6 @@ class DomMaker {
     // forEach card make a new one
     this.cardArray.forEach(cardObject => {
       const cardElement = this.newCard(cardObject.word, cardObject.example, cardObject.definition, {
-        isFlippable: false,
         doMount: false,
         doRerender: true,
         id: cardObject.id,
@@ -441,7 +452,6 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 
 // TODO
 // add:
-//  the titles at the top for modals
 //  options for settings (changing the colour of cards)
 //  modify modal:
 //    proper modify card options, switching the order of the cards (dragging?), and such
@@ -449,3 +459,5 @@ generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 // modify:
 //  names modal and modalContent are ambiguous
 //  do event delegation for card flipping
+// BUG the content is passed as an argument
+// BUG the card id changes when updating a card
