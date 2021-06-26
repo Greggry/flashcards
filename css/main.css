@@ -77,7 +77,7 @@ body {
   cursor: default;
 }
 .card__title {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: bold;
 }
 .card__example {
@@ -167,6 +167,29 @@ body {
   margin: 25px auto;
   font-size: 2rem;
 }
+.modal .form-container {
+  display: grid;
+  grid-template-columns: auto auto;
+}
+.modal .form-container__preview-cards {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.modal .form-container__preview-cards .card {
+  width: 9rem;
+  height: 12rem;
+  font-size: 0.7rem;
+}
+.modal .form-container__preview-cards .card__title {
+  font-size: 1rem;
+}
+.modal .form-container__preview-cards .card--back {
+  font-size: 0.7rem;
+}
+.modal .form-container .modal__btn {
+  grid-column: 1/span 3;
+}
 
 .color-schemes {
   display: grid;
@@ -195,7 +218,7 @@ body {
 .color-schemes .label-container .color-label--active {
   border: 3px solid #1e1b19;
 }
-.color-schemes .example-cards {
+.color-schemes .preview-cards {
   display: flex;
   justify-content: center;
   align-items: center;

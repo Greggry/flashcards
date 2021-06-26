@@ -9,6 +9,9 @@ $auxiliary2: #370096;
 $defaultForeground: '#161616';
 $defaultBackground: '#d8d8d8';
 
+$cardWidth: 18rem;
+$cardHeight: 24rem;
+
 :root {
   // variables which user can change - like that by default
   --cardForegroundColor: #{$defaultForeground};
@@ -82,8 +85,8 @@ body {
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
-  width: 18rem;
-  height: 24rem;
+  width: $cardWidth;
+  height: $cardHeight;
   color: var(--cardForegroundColor);
   background-color: var(--cardBackgroundColor);
   border: 2px solid var(--cardForegroundColor);
@@ -97,7 +100,7 @@ body {
   }
 
   &__title {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: bold;
   }
 
@@ -208,6 +211,35 @@ body {
 
     font-size: 2rem;
   }
+
+  .form-container {
+    display: grid;
+    grid-template-columns: auto auto;
+
+    &__preview-cards {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .card {
+        width: $cardWidth / 2;
+        height: $cardHeight / 2;
+        font-size: 0.7rem;
+
+        &__title {
+          font-size: 1rem;
+        }
+
+        &--back {
+          font-size: 0.7rem;
+        }
+      }
+    }
+
+    .modal__btn {
+      grid-column: 1 / span 3;
+    }
+  }
 }
 
 .color-schemes {
@@ -242,7 +274,7 @@ body {
     }
   }
 
-  .example-cards {
+  .preview-cards {
     display: flex;
     justify-content: center;
     align-items: center;

@@ -183,6 +183,8 @@ class DomMaker {
         class: 'card__definition',
         parentElement: card,
       });
+
+      card.classList.add('card--back');
     } else {
       const wordElement = this.newElement('h1', {
         content: word,
@@ -246,8 +248,8 @@ class DomMaker {
       class: 'modal__content',
     });
 
-    const cancelButton = this.newElement('button', {
-      content: 'cancel',
+    const exitButton = this.newElement('button', {
+      content: 'exit',
       class: 'modal__btn',
       click: () => {
         this.toggleDisableAndBlur();
@@ -256,7 +258,7 @@ class DomMaker {
     });
 
     const modal = this.newElement('div', {
-      content: [title, modalContent, cancelButton],
+      content: [title, modalContent, exitButton],
       class: 'modal',
     });
     this.appendElement(modal, parent, { doMount: options?.doMount });
@@ -279,7 +281,6 @@ class DomMaker {
       const labelElement = [
         this.newElement('label', {
           content: [labelTextElement, textField],
-          parentElement: parentElement,
           class: 'modal__label',
         }),
       ];
@@ -292,8 +293,36 @@ class DomMaker {
     const [definitionLabel, definitionInput] = createLabel('definition:');
 
     const formContainer = this.newElement('div', {
-      content: [wordLabel, exampleLabel, definitionLabel],
       class: 'form-container',
+    });
+
+    const labels = this.newElement('div', {
+      class: 'form-container__labels',
+      content: [wordLabel, exampleLabel, definitionLabel],
+      parentElement: formContainer,
+    });
+    const previewCards = this.newElement('div', {
+      class: 'form-container__preview-cards',
+      content: [
+        this.generatePreviewCard('front', {
+          word: options?.card?.word,
+          example: options?.card?.example,
+        }),
+        this.generatePreviewCard('back', { definition: options?.card?.definition }),
+      ],
+      parentElement: formContainer,
+    });
+
+    labels.addEventListener('keyup', () => {
+      previewCards.innerHTML = '';
+
+      previewCards.append(
+        this.generatePreviewCard('front', {
+          word: wordInput.value,
+          example: exampleInput.value,
+        })
+      );
+      previewCards.append(this.generatePreviewCard('back', { definition: definitionInput.value }));
     });
 
     const submitButton = this.newElement('button', {
@@ -313,6 +342,7 @@ class DomMaker {
             );
       },
     });
+
     // three text input fields, a button to submit the input and a button to close the modal
     return [formContainer, wordInput, exampleInput, definitionInput];
   }
@@ -475,12 +505,10 @@ class DomMaker {
     });
 
     const exampleCards = this.newElement('div', {
-      class: 'example-cards',
+      class: 'preview-cards',
+      content: [this.generatePreviewCard('front'), this.generatePreviewCard('back')],
       parentElement: colorSchemesContainer,
     });
-
-    this.generatePreviewCard(exampleCards, 'front');
-    this.generatePreviewCard(exampleCards, 'back');
 
     labelContainer.addEventListener('click', e => {
       const colorLabel = e.target.closest('.color-label');
@@ -533,12 +561,17 @@ class DomMaker {
     this.rootElement.classList.toggle('blurred');
   }
 
-  generatePreviewCard(parentElement, renderSide) {
-    return this.newCard('word', 'example', 'definition', {
-      doRerender: true, // force to skip adding to the card array
-      renderSide: renderSide,
-      parentElement,
-    });
+  generatePreviewCard(renderSide, options) {
+    return this.newCard(
+      options?.word ?? 'word',
+      options?.example ?? 'example',
+      options?.definition ?? 'definition',
+      {
+        doRerender: true, // force to skip adding to the card array
+        renderSide: renderSide,
+        parentElement: options?.parentElement,
+      }
+    );
   }
 }
 
