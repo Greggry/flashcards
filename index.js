@@ -294,6 +294,7 @@ class DomMaker {
 
     const formContainer = this.newElement('div', {
       class: 'form-container',
+      parentElement,
     });
 
     const labels = this.newElement('div', {
@@ -343,8 +344,7 @@ class DomMaker {
       },
     });
 
-    // three text input fields, a button to submit the input and a button to close the modal
-    return [formContainer, wordInput, exampleInput, definitionInput];
+    return [wordInput, exampleInput, definitionInput];
   }
 
   newCardModal() {
@@ -352,11 +352,9 @@ class DomMaker {
       title: 'add a new card',
     });
 
-    const [formContainer] = this.generateForm(modalContent, {
+    this.generateForm(modalContent, {
       doMakeNew: true,
     });
-
-    modalContent.appendChild(formContainer);
   }
 
   generateSmallCards() {
@@ -424,13 +422,9 @@ class DomMaker {
       const cardObject = this.cardArray.find(card => card.id === clicked?.dataset.id);
 
       if (clicked) {
-        const [formContainer, wordInput, exampleInput, definitionInput] = this.generateForm(
-          modalContent,
-          {
-            card: cardObject,
-          }
-        );
-        this.previewCardContainer.after(formContainer);
+        const [wordInput, exampleInput, definitionInput] = this.generateForm(modalContent, {
+          card: cardObject,
+        });
 
         wordInput.value = cardObject.word;
         exampleInput.value = cardObject.example;
