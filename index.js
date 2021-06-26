@@ -176,17 +176,26 @@ class DomMaker {
       dataId: id,
     });
 
-    const wordElement = this.newElement('h1', {
-      content: word,
-      class: 'card__title',
-      parentElement: card,
-    });
+    // if render side not set
+    if (options.renderSide === 'back') {
+      const definitionElement = this.newElement('p', {
+        content: definition,
+        class: 'card__definition',
+        parentElement: card,
+      });
+    } else {
+      const wordElement = this.newElement('h1', {
+        content: word,
+        class: 'card__title',
+        parentElement: card,
+      });
 
-    const exampleElement = this.newElement('p', {
-      content: example,
-      class: 'card__example',
-      parentElement: card,
-    });
+      const exampleElement = this.newElement('p', {
+        content: example,
+        class: 'card__example',
+        parentElement: card,
+      });
+    }
 
     if (options.doMount || options.parentElement)
       this.appendElement(card, options.parentElement, { doMount: options.doMount });
@@ -320,7 +329,7 @@ class DomMaker {
     modalContent.appendChild(formContainer);
   }
 
-  generateCardPreview() {
+  generateSmallCards() {
     const previewCardArray = [];
 
     // forEach card make a new one
@@ -364,7 +373,7 @@ class DomMaker {
       title: 'modify a card',
     });
     // create an array of the cards with additional functionalities
-    const previewCardArray = this.generateCardPreview();
+    const previewCardArray = this.generateSmallCards();
 
     // prepend all of those items here - so they are at the top of the modal
     this.previewCardContainer = this.newElement('div', {
@@ -405,10 +414,6 @@ class DomMaker {
       title: 'settings',
     });
 
-    // changing colour schemes
-    // create a window with which the user changes css variables responsible for colours
-    // --primary and ---secondary are the colour variables used
-
     const colorSchemesContainer = this.newElement('div', {
       class: 'color-schemes',
       parentElement: modalContent,
@@ -445,18 +450,39 @@ class DomMaker {
       return labelElement;
     };
 
+    const labelContainer = this.newElement('div', {
+      class: 'label-container',
+      parentElement: colorSchemesContainer,
+    });
+
+    const defaultColorScheme = ['#161616', '#d8d8d8'];
     if (!this.colorSchemes) {
       this.colorSchemes = [
-        ['#161616', '#d8d8d8'],
+        defaultColorScheme,
         ['#d8d8d8', '#161616'],
+        ['#1438d8', '#d8d8d8'],
+        ['#d84d07', '#d8d8d8'],
       ];
     }
 
-    this.colorSchemes.forEach(colorScheme =>
-      generateColorSchemeLabel(colorScheme[0], colorScheme[1])
-    );
+    this.colorSchemes.forEach(colorScheme => {
+      const label = generateColorSchemeLabel(colorScheme[0], colorScheme[1]);
+      labelContainer.append(label);
 
-    colorSchemesContainer.addEventListener('click', e => {
+      // default colour scheme
+      if (JSON.stringify(colorScheme) === JSON.stringify(defaultColorScheme))
+        label.classList.add('color-label--active');
+    });
+
+    const exampleCards = this.newElement('div', {
+      class: 'example-cards',
+      parentElement: colorSchemesContainer,
+    });
+
+    this.generatePreviewCard(exampleCards, 'front');
+    this.generatePreviewCard(exampleCards, 'back');
+
+    labelContainer.addEventListener('click', e => {
       const colorLabel = e.target.closest('.color-label');
 
       if (!colorLabel) return; // button not found
@@ -492,7 +518,7 @@ class DomMaker {
     this.refreshCards();
 
     this.previewCardContainer.innerHTML = '';
-    this.generateCardPreview().forEach(card => this.previewCardContainer.append(card));
+    this.generateSmallCards().forEach(card => this.previewCardContainer.append(card));
   }
 
   toggleDisableAndBlur() {
@@ -505,6 +531,14 @@ class DomMaker {
     });
 
     this.rootElement.classList.toggle('blurred');
+  }
+
+  generatePreviewCard(parentElement, renderSide) {
+    return this.newCard('word', 'example', 'definition', {
+      doRerender: true, // force to skip adding to the card array
+      renderSide: renderSide,
+      parentElement,
+    });
   }
 }
 
@@ -521,8 +555,6 @@ function generateExampleCards(numberOfCards) {
 generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
 
 // TODO
-// add:
-//  options for settings (changing the colour of cards)
 //  modify modal:
 //    proper modify card options, switching the order of the cards (dragging?), and such
 //    addCardModal too: right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side

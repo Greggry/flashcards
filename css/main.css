@@ -1,7 +1,7 @@
 @charset "UTF-8";
 :root {
-  --cardForegroundColor: #f0f0f0;
-  --cardBackgroundColor: #370096;
+  --cardForegroundColor: #161616;
+  --cardBackgroundColor: #d8d8d8;
 }
 
 html {
@@ -169,23 +169,37 @@ body {
 }
 
 .color-schemes {
-  display: flex;
+  display: grid;
+  justify-content: center;
+  align-items: center;
 }
-.color-schemes .color-label {
+.color-schemes .label-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 20px;
+}
+.color-schemes .label-container .color-label {
   padding: 20px;
   display: block;
 }
-.color-schemes .color-label:hover {
+.color-schemes .label-container .color-label:hover {
   cursor: pointer;
   opacity: 0.8;
   background-color: #e0e0e0;
 }
-.color-schemes .color-label__color-tile {
+.color-schemes .label-container .color-label__color-tile {
   display: inline-block;
   width: 5rem;
 }
-.color-schemes .color-label--active {
+.color-schemes .label-container .color-label--active {
   border: 3px solid #1e1b19;
+}
+.color-schemes .example-cards {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 20px;
 }
 
 .blurred {

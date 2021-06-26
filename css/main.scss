@@ -6,10 +6,13 @@ $good: #0a8754;
 $auxiliary1: #161412;
 $auxiliary2: #370096;
 
+$defaultForeground: '#161616';
+$defaultBackground: '#d8d8d8';
+
 :root {
   // variables which user can change - like that by default
-  --cardForegroundColor: #{$primary};
-  --cardBackgroundColor: #{$auxiliary2};
+  --cardForegroundColor: #{$defaultForeground};
+  --cardBackgroundColor: #{$defaultBackground};
 }
 
 html {
@@ -30,7 +33,6 @@ body {
 }
 
 .root-element {
-  // add grid instead
   display: grid;
   grid-template-columns: calc(20rem + 15px) auto;
 
@@ -209,26 +211,43 @@ body {
 }
 
 .color-schemes {
-  display: flex;
+  display: grid;
+  justify-content: center;
+  align-items: center;
 
-  .color-label {
-    padding: 20px;
-    display: block;
+  .label-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 20px;
 
-    &:hover {
-      cursor: pointer;
-      opacity: 0.8; // works for just the color tile?
-      background-color: $primary-darker;
+    .color-label {
+      padding: 20px;
+      display: block;
+
+      &:hover {
+        cursor: pointer;
+        opacity: 0.8; // works for just the color tile?
+        background-color: $primary-darker;
+      }
+
+      &__color-tile {
+        display: inline-block;
+        width: 5rem;
+      }
+
+      &--active {
+        border: 3px solid $secondary;
+      }
     }
+  }
 
-    &__color-tile {
-      display: inline-block;
-      width: 5rem;
-    }
+  .example-cards {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
-    &--active {
-      border: 3px solid $secondary;
-    }
+    padding-bottom: 20px;
   }
 }
 
