@@ -135,7 +135,12 @@ class DomMaker {
 
     keys.forEach(key => {
       // accepts only string with exceptions
-      if ((typeof propertiesObj[key] !== 'string' && key !== 'style') || key === 'content') return; // same as 'continue' in a for loop
+      const allowedKeys = ['style', 'draggable'];
+      if (
+        (typeof propertiesObj[key] !== 'string' && !allowedKeys.includes(key)) ||
+        key === 'content'
+      )
+        return; // same as 'continue' in a for loop
 
       // check to assign styles
       if (key === 'style') {
@@ -174,6 +179,7 @@ class DomMaker {
     const card = this.newElement('button', {
       class: 'card',
       dataId: id,
+      draggable: options.draggable,
     });
 
     // if render side not set
@@ -366,6 +372,7 @@ class DomMaker {
         doMount: false,
         doRerender: true,
         id: cardObject.id,
+        draggable: true,
       });
 
       cardElement.classList.add('card--small');
