@@ -87,9 +87,10 @@ body {
   width: 4rem;
   height: 6rem;
   padding: 5px;
-  margin: 0 15px;
-  position: relative;
+  margin: 0 15px 20px 15px;
   font-size: 0.6rem;
+  position: relative;
+  cursor: move;
 }
 .card--small * {
   font-size: inherit;
@@ -126,6 +127,7 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  position: fixed;
   padding: 20px;
   text-align: center;
   color: #1e1b19;
@@ -223,6 +225,16 @@ body {
   justify-content: center;
   align-items: center;
   padding-bottom: 20px;
+}
+
+.dragging {
+  color: var(--cardBackgroundColor);
+  background-color: var(--cardForegroundColor);
+  border: 2px solid var(--cardBackgroundColor);
+}
+
+.hidden {
+  display: none;
 }
 
 .blurred {

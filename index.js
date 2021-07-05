@@ -366,7 +366,7 @@ class DomMaker {
   generateSmallCards() {
     const previewCardArray = [];
 
-    // forEach card make a new one
+    // forEach card make a new one, but small
     this.cardArray.forEach(cardObject => {
       const cardElement = this.newCard(cardObject.word, cardObject.example, cardObject.definition, {
         doMount: false,
@@ -400,10 +400,83 @@ class DomMaker {
       });
     });
 
+    previewCardArray.forEach(card => {
+      card.addEventListener('dragstart', () => {
+        card.classList.add('dragging');
+        previewCardArray.forEach(el =>
+          el.querySelector('.card--small__btn-delete')?.classList.add('hidden')
+        );
+      });
+      card.addEventListener('dragend', e => {
+        card.classList.remove('dragging');
+        previewCardArray.forEach(el =>
+          el.querySelector('.card--small__btn-delete')?.classList.remove('hidden')
+        );
+      });
+    });
+
     return previewCardArray;
   }
 
   modifyModal() {
+    function getNextDraggable(container, xMouse, yMouse) {
+      const cards = container.querySelectorAll('.card');
+
+      // 1. divide the height of the container by the height of cards to get row size
+      const containerBox = container.getBoundingClientRect();
+
+      const cardStyle = getComputedStyle(cards[0]);
+      const rowHeight =
+        Number.parseInt(cardStyle.marginTop) +
+        cards[0].offsetHeight +
+        Number.parseInt(cardStyle.marginBottom);
+
+      // 2. get the current row -  add the height of a card and the vertical margin and check if we got past that
+
+      let currentRow = 0; // rows counted from 1, the row is increased for every row encountered
+      const relativeY = yMouse - containerBox.top; // get the y relative to the containerBox
+
+      while (rowHeight * currentRow < relativeY) {
+        currentRow++; // the loop stops when we get to the row where our mouse pointer is
+      }
+
+      // all the elements within the current row without the .dragged item
+      const filteredCards = [...cards].filter(item => {
+        // return only the elements within the row
+        const rowCoords = containerBox.top + rowHeight * (currentRow - 1); // count rows from zero
+
+        // remove the dragged item from the list
+        if (item.classList.contains('dragging')) return false;
+
+        // the item is in the correct row if returns true
+        return item.getBoundingClientRect().y === rowCoords;
+      });
+
+      // 3. return the closest to x
+      const closestElement = filteredCards.reduce(
+        (closestObj, element) => {
+          const elementBox = element.getBoundingClientRect();
+          const offset = xMouse - elementBox.left - elementBox.width / 2;
+
+          if (offset < 0 && offset > closestObj.offset) {
+            closestObj.offset = offset;
+            closestObj.element = element;
+          }
+
+          return closestObj;
+        },
+        { offset: Number.NEGATIVE_INFINITY } // so the first comparison is the closest
+      ).element; // first card from the first row // returns the closest element in the row where we're hovering over
+
+      const isLastRow = containerBox.height / rowHeight === currentRow;
+      if (!closestElement && !isLastRow) {
+        // special case: return the first element of the next row
+        return filteredCards[filteredCards.length - 1].nextElementSibling;
+      }
+
+      return closestElement;
+    }
+
     const modalContent = this.newModal(document.body, {
       title: 'modify a card',
     });
@@ -416,6 +489,17 @@ class DomMaker {
       class: 'modal__preview-container',
       parentElement: modalContent,
       doPrepend: true,
+    });
+
+    this.previewCardContainer.addEventListener('dragover', e => {
+      const nextElement = getNextDraggable(this.previewCardContainer, e.clientX, e.clientY);
+      const draggingElement = document.querySelector('.dragging');
+
+      if (!nextElement)
+        // not found, append the beginning element of the next row
+        this.previewCardContainer.appendChild(draggingElement);
+
+      this.previewCardContainer.insertBefore(draggingElement, nextElement);
     });
 
     // event delegation
@@ -586,9 +670,17 @@ function generateExampleCards(numberOfCards) {
   }
 }
 
-generateExampleCards(Math.floor(Math.random() * 5) + 1); // 1 to 5 cards
+generateExampleCards(50);
+
+const coordBox = document.createElement('div');
+coordBox.style.position = 'absolute';
+coordBox.style.top = '0';
+coordBox.style.right = '0';
+document.body.appendChild(coordBox);
+document.addEventListener('mousemove', e => {
+  coordBox.innerHTML = `x: ${e.pageX}, y: ${e.pageY}`;
+});
 
 // TODO
 //  modify modal:
 //    proper modify card options, switching the order of the cards (dragging?), and such
-//    addCardModal too: right side of labels: preview of the card that updates live as you type the options, with a checkbox/button to show the other side
