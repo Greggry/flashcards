@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.4 - 2021-07-05
+
+<hr />
+
+### Added:
+
+- modify modal: cards are now draggable; the user can change the card order by dragging
+- settings: colour schemes (4 to choose from)
+- add modal, modify modal, settings modal: cards now have previews that dynamically show the changes made to flashcards
+
+### Changed:
+
+- the default colour scheme
+- card flipping is done with event delegation now
+- refactored generateForm
+- DomMaker: restructured the way properties are accepted, there is an array of properties accepting non-strings
+- minor corrections in styles and javascript code for better readability
+
 ## 0.1.3 - 2021-06-24
 
 <hr />
