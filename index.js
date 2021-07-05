@@ -104,6 +104,10 @@ class DomMaker {
 
     const element = document.createElement(elementType);
 
+    if (!propertiesObj) {
+      return element; // we're done
+    }
+
     // append content
     if (propertiesObj?.content)
       // IIFE recursive function lol
@@ -125,10 +129,6 @@ class DomMaker {
           keys.forEach(key => recursiveCheckAssignContent(content[key], layer + 1)); // check inside the object (array)
         }
       })(propertiesObj.content, 0, 3);
-
-    if (!propertiesObj) {
-      return element; // we're done
-    }
 
     // adding properties
     const keys = Object.keys(propertiesObj); // list of property names
@@ -375,10 +375,16 @@ class DomMaker {
         draggable: true,
       });
 
+      // container that has no margin and will listen for events
+      const transparentOuterLayer = this.newElement('div', {
+        content: cardElement,
+        class: 'card-preview',
+      });
+
       cardElement.classList.add('card--small');
       cardElement.disabled = false;
 
-      previewCardArray.push(cardElement);
+      previewCardArray.push(transparentOuterLayer);
 
       const removeCardButton = this.newElement('button', {
         class: 'card--small__btn-delete',
@@ -400,15 +406,18 @@ class DomMaker {
       });
     });
 
-    previewCardArray.forEach(card => {
+    previewCardArray.forEach(previewItem => {
+      const card = previewItem.querySelector('.card');
+
       card.addEventListener('dragstart', () => {
         card.classList.add('dragging');
         previewCardArray.forEach(el =>
           el.querySelector('.card--small__btn-delete')?.classList.add('hidden')
         );
       });
+
       card.addEventListener('dragend', e => {
-        const nextElement = this.getNextDraggable(this.previewCardContainer, e.clientX, e.clientY);
+        const nextElement = e.target.closest('.card-preview').nextElementSibling; // get the next sibling card preview div
 
         card.classList.remove('dragging');
         previewCardArray.forEach(el =>
@@ -426,7 +435,9 @@ class DomMaker {
         }
 
         // there is a next element
-        const arrayNext = this.cardArray.find(item => item.id === nextElement.dataset.id);
+        const arrayNext = this.cardArray.find(
+          item => item.id === nextElement.querySelector('.card').dataset.id
+        );
 
         // no change
         if (arrayDragged === this.cardArray[this.cardArray.indexOf(arrayNext) - 1]) return;
@@ -438,63 +449,6 @@ class DomMaker {
     });
 
     return previewCardArray;
-  }
-
-  getNextDraggable(container, clientX, clientY) {
-    const cards = container.querySelectorAll('.card');
-
-    // 1. divide the height of the container by the height of cards to get row size
-    const containerBox = container.getBoundingClientRect();
-
-    const cardStyle = getComputedStyle(cards[0]);
-    const rowHeight =
-      Number.parseInt(cardStyle.marginTop) +
-      cards[0].offsetHeight +
-      Number.parseInt(cardStyle.marginBottom);
-
-    // 2. get the current row -  add the height of a card and the vertical margin and check if we got past that
-
-    let currentRow = 0; // rows counted from 1, the row is increased for every row encountered
-    const relativeY = clientY - containerBox.top; // get the y relative to the containerBox
-
-    while (rowHeight * currentRow < relativeY) {
-      currentRow++; // the loop stops when we get to the row where our mouse pointer is
-    }
-
-    // all the elements within the current row without the .dragged item
-    const filteredCards = [...cards].filter(item => {
-      const rowCoords = containerBox.top + rowHeight * (currentRow - 1); // count rows from zero
-
-      // remove the dragged item from the list
-      if (item.classList.contains('dragging')) return false;
-
-      // the item is in the correct row if returns true
-      return item.getBoundingClientRect().y === rowCoords;
-    });
-
-    // 3. return the closest to x
-    const closestElement = filteredCards.reduce(
-      (closestObj, element) => {
-        const elementBox = element.getBoundingClientRect();
-        const offset = clientX - elementBox.left - elementBox.width / 2;
-
-        if (offset < 0 && offset > closestObj.offset) {
-          closestObj.offset = offset;
-          closestObj.element = element;
-        }
-
-        return closestObj;
-      },
-      { offset: Number.NEGATIVE_INFINITY } // so the first comparison is the new closest
-    ).element; // first card from the first row // returns the closest element in the row where we're hovering over
-
-    const isLastRow = containerBox.height / rowHeight === currentRow;
-    if (!closestElement && !isLastRow) {
-      // special case: return the first element of the next row
-      return filteredCards[filteredCards.length - 1].nextElementSibling;
-    }
-
-    return closestElement;
   }
 
   modifyModal() {
@@ -513,17 +467,20 @@ class DomMaker {
     });
 
     this.previewCardContainer.addEventListener('dragover', e => {
-      const nextElement = this.getNextDraggable(this.previewCardContainer, e.clientX, e.clientY);
-      const draggingElement = document.querySelector('.dragging');
+      const draggingElement = document.querySelector('.dragging').closest('.card-preview');
+      const nextElement = e.target.closest('.card-preview')?.nextElementSibling;
 
-      if (!nextElement)
-        // not found, append the beginning element of the next row
-        this.previewCardContainer.appendChild(draggingElement);
+      if (draggingElement === nextElement) {
+        this.previewCardContainer.insertBefore(draggingElement, nextElement.previousElementSibling);
+        return;
+      }
+
+      if (!nextElement) this.previewCardContainer.appendChild(draggingElement);
 
       this.previewCardContainer.insertBefore(draggingElement, nextElement);
     });
 
-    // event delegation
+    // show the form, event delegation
     this.previewCardContainer.addEventListener('click', event => {
       if (event.target.classList.contains('card--small__btn-delete')) return;
 
@@ -691,18 +648,8 @@ function generateExampleCards(numberOfCards) {
   }
 }
 
-generateExampleCards(50);
-
-const coordBox = document.createElement('div');
-coordBox.style.position = 'absolute';
-coordBox.style.top = '0';
-coordBox.style.right = '0';
-document.body.appendChild(coordBox);
-document.addEventListener('mousemove', e => {
-  coordBox.innerHTML = `x: ${e.pageX}, y: ${e.pageY}`;
-});
+generateExampleCards(10);
 
 // TODO
 //  modify modal:
 //    proper modify card options, switching the order of the cards (dragging?), and such
-// improve dragging - hovering over right side of a card doesn't always remount the card we're dragging
