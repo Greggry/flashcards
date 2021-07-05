@@ -408,75 +408,96 @@ class DomMaker {
         );
       });
       card.addEventListener('dragend', e => {
+        const nextElement = this.getNextDraggable(this.previewCardContainer, e.clientX, e.clientY);
+
         card.classList.remove('dragging');
         previewCardArray.forEach(el =>
           el.querySelector('.card--small__btn-delete')?.classList.remove('hidden')
         );
+
+        const arrayDragged = this.cardArray.find(item => item.id === card.dataset.id);
+
+        if (!nextElement) {
+          // move the item to the end of the array
+          this.cardArray.splice(this.cardArray.indexOf(arrayDragged), 1);
+          this.cardArray.push(arrayDragged);
+
+          return;
+        }
+
+        // there is a next element
+        const arrayNext = this.cardArray.find(item => item.id === nextElement.dataset.id);
+
+        // no change
+        if (arrayDragged === this.cardArray[this.cardArray.indexOf(arrayNext) - 1]) return;
+
+        // change the card array
+        this.cardArray.splice(this.cardArray.indexOf(arrayDragged), 1); // remove the dragged item
+        this.cardArray.splice(this.cardArray.indexOf(arrayNext), 0, arrayDragged); // insert the dragged item before arrayNext
       });
     });
 
     return previewCardArray;
   }
 
-  modifyModal() {
-    function getNextDraggable(container, xMouse, yMouse) {
-      const cards = container.querySelectorAll('.card');
+  getNextDraggable(container, clientX, clientY) {
+    const cards = container.querySelectorAll('.card');
 
-      // 1. divide the height of the container by the height of cards to get row size
-      const containerBox = container.getBoundingClientRect();
+    // 1. divide the height of the container by the height of cards to get row size
+    const containerBox = container.getBoundingClientRect();
 
-      const cardStyle = getComputedStyle(cards[0]);
-      const rowHeight =
-        Number.parseInt(cardStyle.marginTop) +
-        cards[0].offsetHeight +
-        Number.parseInt(cardStyle.marginBottom);
+    const cardStyle = getComputedStyle(cards[0]);
+    const rowHeight =
+      Number.parseInt(cardStyle.marginTop) +
+      cards[0].offsetHeight +
+      Number.parseInt(cardStyle.marginBottom);
 
-      // 2. get the current row -  add the height of a card and the vertical margin and check if we got past that
+    // 2. get the current row -  add the height of a card and the vertical margin and check if we got past that
 
-      let currentRow = 0; // rows counted from 1, the row is increased for every row encountered
-      const relativeY = yMouse - containerBox.top; // get the y relative to the containerBox
+    let currentRow = 0; // rows counted from 1, the row is increased for every row encountered
+    const relativeY = clientY - containerBox.top; // get the y relative to the containerBox
 
-      while (rowHeight * currentRow < relativeY) {
-        currentRow++; // the loop stops when we get to the row where our mouse pointer is
-      }
-
-      // all the elements within the current row without the .dragged item
-      const filteredCards = [...cards].filter(item => {
-        // return only the elements within the row
-        const rowCoords = containerBox.top + rowHeight * (currentRow - 1); // count rows from zero
-
-        // remove the dragged item from the list
-        if (item.classList.contains('dragging')) return false;
-
-        // the item is in the correct row if returns true
-        return item.getBoundingClientRect().y === rowCoords;
-      });
-
-      // 3. return the closest to x
-      const closestElement = filteredCards.reduce(
-        (closestObj, element) => {
-          const elementBox = element.getBoundingClientRect();
-          const offset = xMouse - elementBox.left - elementBox.width / 2;
-
-          if (offset < 0 && offset > closestObj.offset) {
-            closestObj.offset = offset;
-            closestObj.element = element;
-          }
-
-          return closestObj;
-        },
-        { offset: Number.NEGATIVE_INFINITY } // so the first comparison is the closest
-      ).element; // first card from the first row // returns the closest element in the row where we're hovering over
-
-      const isLastRow = containerBox.height / rowHeight === currentRow;
-      if (!closestElement && !isLastRow) {
-        // special case: return the first element of the next row
-        return filteredCards[filteredCards.length - 1].nextElementSibling;
-      }
-
-      return closestElement;
+    while (rowHeight * currentRow < relativeY) {
+      currentRow++; // the loop stops when we get to the row where our mouse pointer is
     }
 
+    // all the elements within the current row without the .dragged item
+    const filteredCards = [...cards].filter(item => {
+      const rowCoords = containerBox.top + rowHeight * (currentRow - 1); // count rows from zero
+
+      // remove the dragged item from the list
+      if (item.classList.contains('dragging')) return false;
+
+      // the item is in the correct row if returns true
+      return item.getBoundingClientRect().y === rowCoords;
+    });
+
+    // 3. return the closest to x
+    const closestElement = filteredCards.reduce(
+      (closestObj, element) => {
+        const elementBox = element.getBoundingClientRect();
+        const offset = clientX - elementBox.left - elementBox.width / 2;
+
+        if (offset < 0 && offset > closestObj.offset) {
+          closestObj.offset = offset;
+          closestObj.element = element;
+        }
+
+        return closestObj;
+      },
+      { offset: Number.NEGATIVE_INFINITY } // so the first comparison is the new closest
+    ).element; // first card from the first row // returns the closest element in the row where we're hovering over
+
+    const isLastRow = containerBox.height / rowHeight === currentRow;
+    if (!closestElement && !isLastRow) {
+      // special case: return the first element of the next row
+      return filteredCards[filteredCards.length - 1].nextElementSibling;
+    }
+
+    return closestElement;
+  }
+
+  modifyModal() {
     const modalContent = this.newModal(document.body, {
       title: 'modify a card',
     });
@@ -492,7 +513,7 @@ class DomMaker {
     });
 
     this.previewCardContainer.addEventListener('dragover', e => {
-      const nextElement = getNextDraggable(this.previewCardContainer, e.clientX, e.clientY);
+      const nextElement = this.getNextDraggable(this.previewCardContainer, e.clientX, e.clientY);
       const draggingElement = document.querySelector('.dragging');
 
       if (!nextElement)
@@ -684,3 +705,4 @@ document.addEventListener('mousemove', e => {
 // TODO
 //  modify modal:
 //    proper modify card options, switching the order of the cards (dragging?), and such
+// improve dragging - hovering over right side of a card doesn't always remount the card we're dragging
