@@ -17,6 +17,7 @@
 - refactored generateForm
 - DomMaker: restructured the way properties are accepted, there is an array of properties accepting non-strings
 - minor corrections in styles and javascript code for better readability
+- the preview cards now have a parent each, they are transparent divs that listen to drag events
 
 ## 0.1.3 - 2021-06-24
 
