@@ -1,105 +1,18 @@
 'use strict';
 
-const DomMaker = function () {
+const DomMaker = function (rootElement, cardArray) {
   // the rootElement will be the parent of everything (but modals)
-  console.log(this);
+  this.rootElement = rootElement;
 
-  this.rootElement = this.newElement('div', {
-    parentElement: document.body,
-    class: 'root-element',
-  });
-
-  this.cardMountpoint = this.newElement('div', {
-    parentElement: this.rootElement,
-    class: 'card-mountpoint',
-  });
-  this.cardMountpoint.addEventListener('click', e => {
-    const cardElement = e.target.closest('.card');
-
-    if (!cardElement) return; // no card was clicked
-
-    const cardObject = this.cardArray.find(card => card.id === cardElement?.dataset.id);
-
-    if (!cardObject.isFlipped) {
-      cardElement.innerHTML = '';
-
-      const definition = this.newElement('p', {
-        content: cardObject.definition,
-      });
-
-      cardElement.appendChild(definition);
-    } else {
-      cardElement.innerHTML = '';
-
-      const wordElement = this.newElement('h1', {
-        content: cardObject.word,
-        class: 'card__title',
-      });
-      const exampleElement = this.newElement('p', {
-        content: cardObject.example,
-        class: 'card__example',
-      });
-
-      cardElement.appendChild(wordElement);
-      cardElement.appendChild(exampleElement);
-    }
-
-    cardObject.isFlipped = !cardObject.isFlipped;
-  });
+  this.cardArray = cardArray;
 
   // this flag tracks the state of the children of main element
   this.isEachChildDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
 
-  // they store cards and modals
-  this.cardArray = [];
-
-  // generate buttons for options
-  this.addButton = this.newElement('button', {
-    content: 'new',
-    class: 'btn options__add-btn',
-    click: this.newCardModal.bind(this),
-  });
-  this.modifyButton = this.newElement('button', {
-    content: 'modify',
-    class: 'btn options__modify-btn',
-    click: this.modifyModal.bind(this),
-  });
-  this.settingsButton = this.newElement('button', {
-    content: 'settings',
-    class: 'btn options__settings-btn',
-    click: this.settingsModal.bind(this),
-  });
-
-  this.sidePaneTitle = this.newElement('h1', {
-    content: 'options',
-    class: 'side-pane__title',
-  });
-  this.options = this.newElement('div', {
-    content: [this.addButton, this.modifyButton, this.settingsButton],
-    class: 'side-pane__options',
-  });
-
-  this.sidePane = this.newElement('div', {
-    content: [this.sidePaneTitle, this.options],
-    class: 'side-pane',
-    parentElement: this.rootElement,
-    doPrepend: true, // it needs to be first in the dom
-  });
+  if (this.constructor === DomMaker) this.generateDom();
 };
 
-DomMaker.prototype.appendElement = function (element, parent, options) {
-  // if true -> append to the default element (cards)
-  if (options.doMount === true) this.cardMountpoint.appendChild(element);
-  else if (
-    typeof parent === 'object' &&
-    typeof parent.appendChild === 'function' &&
-    typeof element === 'object' &&
-    typeof element.appendChild === 'function'
-  )
-    if (options.doPrepend === true) parent.prepend(element);
-    else parent.appendChild(element);
-};
-
+// to DomMaker
 DomMaker.prototype.newElement = function (elementType, propertiesObj) {
   if (typeof elementType !== 'string') return false;
 
@@ -169,16 +82,122 @@ DomMaker.prototype.newElement = function (elementType, propertiesObj) {
   return element;
 };
 
-DomMaker.prototype.newCard = function (word, example, definition, options) {
+DomMaker.prototype.appendElement = function (element, parent, options) {
+  // if true -> append to the default element (cards)
+  if (options.doMount === true) {
+    // find the cardMountpoint. Skip the search if property set
+    this.cardMountpoint = this.cardMountpoint ?? this.rootElement.querySelector('.card-mountpoint');
+
+    this.cardMountpoint.appendChild(element);
+  } else if (
+    typeof parent === 'object' &&
+    typeof parent.appendChild === 'function' &&
+    typeof element === 'object' &&
+    typeof element.appendChild === 'function'
+  )
+    if (options.doPrepend === true) parent.prepend(element);
+    else parent.appendChild(element);
+};
+
+DomMaker.prototype.generateDom = function () {
+  // generateSidePane
+  (() => {
+    const sidePaneRoot = this.newElement('div', {
+      parentElement: this.rootElement,
+      class: 'side-pane',
+      doPrepend: true, // it needs to be first in the dom
+    });
+
+    const title = this.newElement('h1', {
+      parentElement: sidePaneRoot,
+      content: 'options',
+      class: 'side-pane__title',
+    });
+
+    const options = this.newElement('div', {
+      parentElement: sidePaneRoot,
+      class: 'side-pane__options',
+    });
+
+    const addButton = this.newElement('button', {
+      content: 'new',
+      class: 'btn options__add-btn',
+      parentElement: options,
+    });
+    const modifyBtn = this.newElement('button', {
+      content: 'modify',
+      class: 'btn options__modify-btn',
+      parentElement: options,
+    });
+    const settingsBtn = this.newElement('button', {
+      content: 'settings',
+      class: 'btn options__settings-btn',
+      parentElement: options,
+    });
+  })();
+
+  const cardMountpoint = this.newElement('div', {
+    parentElement: this.rootElement,
+    class: 'card-mountpoint',
+  });
+};
+
+const CardMaker = function (rootElement, cardArray, options) {
+  DomMaker.call(this, rootElement, cardArray);
+
+  this.cardMountpoint = document.querySelector('.card-mountpoint');
+
+  if (!options?.isFirstInstance) return this; // new keyword returns this by default, simulate that
+
+  this.cardMountpoint.addEventListener('click', e => {
+    const cardElement = e.target.closest('.card');
+
+    if (!cardElement) return; // no card was clicked
+
+    const cardObject = this.cardArray.find(card => card.id === cardElement?.dataset.id);
+
+    if (!cardObject.isFlipped) {
+      cardElement.innerHTML = '';
+
+      const definition = this.newElement('p', {
+        content: cardObject.definition,
+      });
+
+      cardElement.appendChild(definition);
+    } else {
+      cardElement.innerHTML = '';
+
+      const wordElement = this.newElement('h1', {
+        content: cardObject.word,
+        class: 'card__title',
+      });
+      const exampleElement = this.newElement('p', {
+        content: cardObject.example,
+        class: 'card__example',
+      });
+
+      cardElement.appendChild(wordElement);
+      cardElement.appendChild(exampleElement);
+    }
+
+    cardObject.isFlipped = !cardObject.isFlipped;
+  });
+};
+CardMaker.prototype = Object.create(DomMaker.prototype);
+CardMaker.prototype.constructor = CardMaker;
+
+CardMaker.prototype.newCard = function (word, example, definition, options = {}) {
   const id = options.id // if we set an id before (doRerender)
     ? options.id
     : `${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-  const card = this.newElement('button', {
+  const cardOptions = {
     class: 'card',
     dataId: id,
-    draggable: options.draggable,
-  });
+  };
+  if (options.draggable) cardOptions.draggable = options.draggable; // set a card property if passed through the arguments' options
+
+  const card = this.newElement('button', cardOptions);
 
   // if render side not set
   if (options.renderSide === 'back') {
@@ -225,139 +244,7 @@ DomMaker.prototype.newCard = function (word, example, definition, options) {
   return card;
 };
 
-DomMaker.prototype.refreshCards = function (mountpoint = this.cardMountpoint) {
-  // TODO: check this.cardMountpoint's value
-  // remove items from the mountpoint
-  mountpoint.innerHTML = '';
-
-  // add them from the list
-  this.cardArray.forEach(item => {
-    this.newCard(item.word, item.example, item.definition, {
-      doMount: true,
-      doRerender: true,
-      id: item.id,
-    });
-  });
-};
-
-DomMaker.prototype.newModal = function (parent, options) {
-  this.toggleDisableAndBlur();
-
-  const title = this.newElement('div', {
-    content: [`<h1>${options?.title}</h1>` ?? '', '<hr />'],
-    class: 'modal__title',
-  });
-
-  // the element to which things are appended, the outside layer is for the cancel button and the modal title
-  const modalContent = this.newElement('div', {
-    class: 'modal__content',
-  });
-
-  const exitButton = this.newElement('button', {
-    content: 'exit',
-    class: 'modal__btn',
-    click: () => {
-      this.toggleDisableAndBlur();
-      modal.remove();
-    },
-  });
-
-  const modal = this.newElement('div', {
-    content: [title, modalContent, exitButton],
-    class: 'modal',
-  });
-  this.appendElement(modal, parent, { doMount: options?.doMount });
-
-  return modalContent;
-};
-
-DomMaker.prototype.generateForm = function (parentElement, options) {
-  const createLabel = labelText => {
-    const textField = this.newElement('input', {
-      type: 'text',
-      class: 'modal__label__input',
-    });
-
-    const labelTextElement = this.newElement('span', {
-      content: labelText,
-      class: 'modal__label__text',
-    });
-
-    const labelElement = [
-      this.newElement('label', {
-        content: [labelTextElement, textField],
-        class: 'modal__label',
-      }),
-    ];
-
-    return [labelElement, textField];
-  };
-
-  const [wordLabel, wordInput] = createLabel('word:');
-  const [exampleLabel, exampleInput] = createLabel('example:');
-  const [definitionLabel, definitionInput] = createLabel('definition:');
-
-  const formContainer = this.newElement('div', {
-    class: 'form-container',
-    parentElement,
-  });
-
-  const labels = this.newElement('div', {
-    class: 'form-container__labels',
-    content: [wordLabel, exampleLabel, definitionLabel],
-    parentElement: formContainer,
-  });
-  const previewCards = this.newElement('div', {
-    class: 'form-container__preview-cards',
-    content: [
-      this.generatePreviewCard('front', {
-        word: options?.card?.word,
-        example: options?.card?.example,
-      }),
-      this.generatePreviewCard('back', { definition: options?.card?.definition }),
-    ],
-    parentElement: formContainer,
-  });
-
-  labels.addEventListener('keyup', () => {
-    previewCards.innerHTML = '';
-
-    previewCards.append(
-      this.generatePreviewCard('front', {
-        word: wordInput.value,
-        example: exampleInput.value,
-      })
-    );
-    previewCards.append(this.generatePreviewCard('back', { definition: definitionInput.value }));
-  });
-
-  const submitButton = this.newElement('button', {
-    content: 'submit',
-    class: 'modal__btn',
-    parentElement: formContainer,
-    click: () => {
-      options.doMakeNew
-        ? this.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
-            doMount: true,
-          })
-        : this.updateCard(options.card, wordInput.value, exampleInput.value, definitionInput.value);
-    },
-  });
-
-  return [wordInput, exampleInput, definitionInput];
-};
-
-DomMaker.prototype.newCardModal = function () {
-  const modalContent = this.newModal(document.body, {
-    title: 'add a new card',
-  });
-
-  this.generateForm(modalContent, {
-    doMakeNew: true,
-  });
-};
-
-DomMaker.prototype.generateSmallCards = function () {
+CardMaker.prototype.generateSmallCards = function () {
   const previewCardArray = [];
 
   // forEach card make a new one, but small
@@ -439,18 +326,219 @@ DomMaker.prototype.generateSmallCards = function () {
       // change the card array
       this.cardArray.splice(this.cardArray.indexOf(arrayDragged), 1); // remove the dragged item
       this.cardArray.splice(this.cardArray.indexOf(arrayNext), 0, arrayDragged); // insert the dragged item before arrayNext
+
+      // remount the main card container's cards
+      this.refreshCards();
     });
   });
 
   return previewCardArray;
 };
 
-DomMaker.prototype.modifyModal = function () {
+CardMaker.prototype.refreshCards = function (mountpoint) {
+  // remove items from the mountpoint
+
+  if (!mountpoint) mountpoint = this.rootElement.querySelector('.card-mountpoint');
+
+  mountpoint.innerHTML = '';
+
+  // add them from the list
+  this.cardArray.forEach(item => {
+    this.newCard(item.word, item.example, item.definition, {
+      doMount: true,
+      doRerender: true,
+      id: item.id,
+    });
+  });
+};
+
+CardMaker.prototype.updateCard = function (card, newWord, newExample, newDefinition) {
+  if (!card) return;
+
+  card.word = newWord;
+  card.example = newExample;
+  card.definition = newDefinition;
+
+  // remount the main card container
+  this.refreshCards();
+
+  // remount the preview (small) cards
+  const previewCardContainer = document.querySelector('.modal__preview-container');
+
+  previewCardContainer.innerHTML = '';
+  this.generateSmallCards().forEach(card => previewCardContainer.append(card));
+};
+
+const ModalMaker = function (rootElement, cardArray) {
+  DomMaker.call(this, rootElement, cardArray);
+
+  // create eventListeners for buttons
+  const addBtn = rootElement.querySelector('.btn.options__add-btn');
+  addBtn.addEventListener('click', this.newCardModal.bind(this));
+
+  const modifyBtn = rootElement.querySelector('.btn.options__modify-btn');
+  modifyBtn.addEventListener('click', this.modifyModal.bind(this));
+
+  const settingsBtn = rootElement.querySelector('.btn.options__settings-btn');
+  settingsBtn.addEventListener('click', this.settingsModal.bind(this));
+};
+ModalMaker.prototype = Object.create(DomMaker.prototype);
+ModalMaker.prototype.constructor = ModalMaker;
+
+ModalMaker.prototype.newModal = function (parent, options) {
+  this.toggleDisableAndBlur(this.rootElement);
+
+  const title = this.newElement('div', {
+    content: [`<h1>${options?.title ?? 'Modal Title'}</h1>`, '<hr />'],
+    class: 'modal__title',
+  });
+
+  // the element to which things are appended, the outside layer is for the cancel button and the modal title
+  const modalContent = this.newElement('div', {
+    class: 'modal__content',
+  });
+
+  const exitButton = this.newElement('button', {
+    content: 'exit',
+    class: 'modal__btn',
+    click: () => {
+      this.toggleDisableAndBlur();
+      modal.remove();
+    },
+  });
+
+  const modal = this.newElement('div', {
+    content: [title, modalContent, exitButton],
+    class: 'modal',
+  });
+  this.appendElement(modal, parent, { doMount: options?.doMount });
+
+  return modalContent;
+};
+
+ModalMaker.prototype.toggleDisableAndBlur = function () {
+  const childrenArray = this.rootElement.querySelectorAll('*');
+
+  this.isEachChildDisabled = !this.isEachChildDisabled;
+
+  childrenArray.forEach(child => {
+    child.disabled = this.isEachChildDisabled; // first it will disable the children then enable and so on
+  });
+
+  this.rootElement.classList.toggle('blurred');
+};
+
+ModalMaker.prototype.generateForm = function (parentElement, options) {
+  const cardMaker = new CardMaker(this.rootElement, this.cardArray); // this function uses the CardMaker object to generate preview
+
+  const createLabel = labelText => {
+    const textField = this.newElement('input', {
+      type: 'text',
+      class: 'modal__label__input',
+    });
+
+    const labelTextElement = this.newElement('span', {
+      content: labelText,
+      class: 'modal__label__text',
+    });
+
+    const labelElement = [
+      this.newElement('label', {
+        content: [labelTextElement, textField],
+        class: 'modal__label',
+      }),
+    ];
+
+    return [labelElement, textField];
+  };
+
+  const [wordLabel, wordInput] = createLabel('word:');
+  const [exampleLabel, exampleInput] = createLabel('example:');
+  const [definitionLabel, definitionInput] = createLabel('definition:');
+
+  const formContainer = this.newElement('div', {
+    class: 'form-container',
+    parentElement,
+  });
+
+  const labels = this.newElement('div', {
+    class: 'form-container__labels',
+    content: [wordLabel, exampleLabel, definitionLabel],
+    parentElement: formContainer,
+  });
+  const previewCards = this.newElement('div', {
+    class: 'form-container__preview-cards',
+    content: [
+      this.generatePreviewCard(
+        'front',
+        {
+          word: options?.card?.word,
+          example: options?.card?.example,
+        },
+        cardMaker
+      ),
+      this.generatePreviewCard('back', { definition: options?.card?.definition }, cardMaker),
+    ],
+    parentElement: formContainer,
+  });
+
+  labels.addEventListener('keyup', () => {
+    previewCards.innerHTML = '';
+
+    previewCards.append(
+      this.generatePreviewCard(
+        'front',
+        {
+          word: wordInput.value,
+          example: exampleInput.value,
+        },
+        cardMaker
+      )
+    );
+    previewCards.append(
+      this.generatePreviewCard('back', { definition: definitionInput.value }, cardMaker)
+    );
+  });
+
+  const submitButton = this.newElement('button', {
+    content: 'submit',
+    class: 'modal__btn',
+    parentElement: formContainer,
+    click: () => {
+      options.doMakeNew
+        ? cardMaker.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
+            doMount: true,
+          })
+        : cardMaker.updateCard(
+            options.card,
+            wordInput.value,
+            exampleInput.value,
+            definitionInput.value
+          );
+    },
+  });
+
+  return [wordInput, exampleInput, definitionInput];
+};
+
+ModalMaker.prototype.newCardModal = function () {
+  const modalContent = this.newModal(document.body, {
+    title: 'add a new card',
+  });
+
+  this.generateForm(modalContent, {
+    doMakeNew: true,
+  });
+};
+
+ModalMaker.prototype.modifyModal = function () {
+  const cardMaker = new CardMaker(this.rootElement, this.cardArray); // this function uses it to generate preview
+
   const modalContent = this.newModal(document.body, {
     title: 'modify a card',
   });
   // create an array of the cards with additional functionalities
-  const previewCardArray = this.generateSmallCards();
+  const previewCardArray = cardMaker.generateSmallCards();
 
   // prepend all of those items here - so they are at the top of the modal
   this.previewCardContainer = this.newElement('div', {
@@ -496,7 +584,9 @@ DomMaker.prototype.modifyModal = function () {
   });
 };
 
-DomMaker.prototype.settingsModal = function () {
+ModalMaker.prototype.settingsModal = function () {
+  const cardMaker = new CardMaker(this.rootElement, this.cardArray);
+
   const modalContent = this.newModal(document.body, {
     title: 'settings',
   });
@@ -563,7 +653,10 @@ DomMaker.prototype.settingsModal = function () {
 
   const exampleCards = this.newElement('div', {
     class: 'preview-cards',
-    content: [this.generatePreviewCard('front'), this.generatePreviewCard('back')],
+    content: [
+      this.generatePreviewCard('front', {}, cardMaker), // TODO refactor (the function)
+      this.generatePreviewCard('back', {}, cardMaker),
+    ],
     parentElement: colorSchemesContainer,
   });
 
@@ -592,34 +685,10 @@ DomMaker.prototype.settingsModal = function () {
   });
 };
 
-DomMaker.prototype.updateCard = function (card, newWord, newExample, newDefinition) {
-  if (!card) return;
+ModalMaker.prototype.generatePreviewCard = function (renderSide, options, cardMakerObject) {
+  // TODO make the renderSide argument be passed through options
 
-  card.word = newWord;
-  card.example = newExample;
-  card.definition = newDefinition;
-
-  // update UI
-  this.refreshCards();
-
-  this.previewCardContainer.innerHTML = '';
-  this.generateSmallCards().forEach(card => this.previewCardContainer.append(card));
-};
-
-DomMaker.prototype.toggleDisableAndBlur = function () {
-  const childrenArray = document.querySelectorAll('.root-element *');
-
-  this.isEachChildDisabled = !this.isEachChildDisabled;
-
-  childrenArray.forEach(child => {
-    child.disabled = this.isEachChildDisabled; // first it will disable the children then enable and so on
-  });
-
-  this.rootElement.classList.toggle('blurred');
-};
-
-DomMaker.prototype.generatePreviewCard = function (renderSide, options) {
-  return this.newCard(
+  return cardMakerObject.newCard(
     options?.word ?? 'word',
     options?.example ?? 'example',
     options?.definition ?? 'definition',
@@ -631,14 +700,32 @@ DomMaker.prototype.generatePreviewCard = function (renderSide, options) {
   );
 };
 
-const maker = new DomMaker();
+const root = document.querySelector('.root-element');
+const cardArray = [];
 
-function generateExampleCards(numberOfCards) {
-  for (let i = 0; i < numberOfCards; i++) {
-    maker.newCard(`word no.${i + 1}`, `example sentence no.${i + 1}`, `definition no.${i + 1}`, {
-      doMount: true,
-    });
-  }
+const domMaker = new DomMaker(root, cardArray);
+const cardMaker = new CardMaker(root, cardArray, { isFirstInstance: true });
+const modalMaker = new ModalMaker(root, cardArray, { isFirstInstance: true });
+
+function generateCards(num) {
+  for (let i = 0; i < num; i++)
+    cardMaker.newCard(`word${i}`, 'example', 'definition', { doMount: true });
 }
 
-generateExampleCards(10);
+generateCards(7);
+
+// TODO
+// Dom initially should be generated in a separate function
+// generate DOM using the DomMaker classes
+// how will the classes (including subclasses) know where are:
+//  DOMElements = document.querySelector them within the root
+//    root will be querySelector'd too
+//  non-DomElements should be defined in the main class and be accessible to the children (prototypal inheritance)
+
+// in situations when modals use cards:
+// - use the constructor function inside a function of another type of object
+//    - requires all the classes to be declared in the same file - not a big problem because it's just ~ 700 lines or so, and classes are split
+//    - not memory hungry - prototypes have functions and they aren't copied that way
+// - make the parent communicate with children both ways, so we could call this.parentObject.anotherChild to gain access
+//    - intricate
+//    - breaks the logical division of classes
