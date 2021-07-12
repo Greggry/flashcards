@@ -369,7 +369,7 @@ CardMaker.prototype.updateCard = function (card, newWord, newExample, newDefinit
   this.generateSmallCards().forEach(card => previewCardContainer.append(card));
 };
 
-const ModalMaker = function (rootElement, cardArray) {
+const ModalMaker = function (rootElement, cardArray, options) {
   DomMaker.call(this, rootElement, cardArray);
 
   // create eventListeners for buttons
@@ -381,6 +381,11 @@ const ModalMaker = function (rootElement, cardArray) {
 
   const settingsBtn = rootElement.querySelector('.btn.options__settings-btn');
   settingsBtn.addEventListener('click', this.settingsModal.bind(this));
+
+  if (!options?.isFirstInstance) return this;
+
+  // working on the first instance only
+  this.auxiliaryCardMaker = new CardMaker(rootElement, cardArray); // periodically used by modals
 };
 ModalMaker.prototype = Object.create(DomMaker.prototype);
 ModalMaker.prototype.constructor = ModalMaker;
@@ -469,15 +474,12 @@ ModalMaker.prototype.generateForm = function (parentElement, options) {
   const previewCards = this.newElement('div', {
     class: 'form-container__preview-cards',
     content: [
-      this.generatePreviewCard(
-        'front',
-        {
-          word: options?.card?.word,
-          example: options?.card?.example,
-        },
-        cardMaker
-      ),
-      this.generatePreviewCard('back', { definition: options?.card?.definition }, cardMaker),
+      this.generatePreviewCard({
+        word: options?.card?.word,
+        example: options?.card?.example,
+        renderSide: 'front',
+      }),
+      this.generatePreviewCard({ definition: options?.card?.definition, renderSide: 'back' }),
     ],
     parentElement: formContainer,
   });
@@ -486,17 +488,14 @@ ModalMaker.prototype.generateForm = function (parentElement, options) {
     previewCards.innerHTML = '';
 
     previewCards.append(
-      this.generatePreviewCard(
-        'front',
-        {
-          word: wordInput.value,
-          example: exampleInput.value,
-        },
-        cardMaker
-      )
+      this.generatePreviewCard({
+        word: wordInput.value,
+        example: exampleInput.value,
+        renderSide: 'front',
+      })
     );
     previewCards.append(
-      this.generatePreviewCard('back', { definition: definitionInput.value }, cardMaker)
+      this.generatePreviewCard({ definition: definitionInput.value, renderSide: 'back' })
     );
   });
 
@@ -654,8 +653,8 @@ ModalMaker.prototype.settingsModal = function () {
   const exampleCards = this.newElement('div', {
     class: 'preview-cards',
     content: [
-      this.generatePreviewCard('front', {}, cardMaker), // TODO refactor (the function)
-      this.generatePreviewCard('back', {}, cardMaker),
+      this.generatePreviewCard({ renderSide: 'front' }),
+      this.generatePreviewCard({ renderSide: 'back' }),
     ],
     parentElement: colorSchemesContainer,
   });
@@ -685,16 +684,14 @@ ModalMaker.prototype.settingsModal = function () {
   });
 };
 
-ModalMaker.prototype.generatePreviewCard = function (renderSide, options, cardMakerObject) {
-  // TODO make the renderSide argument be passed through options
-
-  return cardMakerObject.newCard(
+ModalMaker.prototype.generatePreviewCard = function (options) {
+  return this.auxiliaryCardMaker.newCard(
     options?.word ?? 'word',
     options?.example ?? 'example',
     options?.definition ?? 'definition',
     {
       doRerender: true, // force to skip adding to the card array
-      renderSide: renderSide,
+      renderSide: options.renderSide,
       parentElement: options?.parentElement,
     }
   );
@@ -713,19 +710,3 @@ function generateCards(num) {
 }
 
 generateCards(7);
-
-// TODO
-// Dom initially should be generated in a separate function
-// generate DOM using the DomMaker classes
-// how will the classes (including subclasses) know where are:
-//  DOMElements = document.querySelector them within the root
-//    root will be querySelector'd too
-//  non-DomElements should be defined in the main class and be accessible to the children (prototypal inheritance)
-
-// in situations when modals use cards:
-// - use the constructor function inside a function of another type of object
-//    - requires all the classes to be declared in the same file - not a big problem because it's just ~ 700 lines or so, and classes are split
-//    - not memory hungry - prototypes have functions and they aren't copied that way
-// - make the parent communicate with children both ways, so we could call this.parentObject.anotherChild to gain access
-//    - intricate
-//    - breaks the logical division of classes
