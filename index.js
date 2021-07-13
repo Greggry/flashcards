@@ -2,14 +2,13 @@
 
 const DomMaker = function (rootElement, cardArray) {
   // the rootElement will be the parent of everything (but modals)
-  this.rootElement = rootElement;
+  this.constructor.prototype.rootElement = rootElement;
+  this.constructor.prototype.cardArray = cardArray;
 
-  this.cardArray = cardArray;
+  this.generateDom();
 
-  // this flag tracks the state of the children of main element
-  this.isEachChildDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
-
-  if (this.constructor === DomMaker) this.generateDom();
+  this.constructor.prototype.cardMaker = new CardMaker();
+  this.constructor.prototype.modalMaker = new ModalMaker();
 };
 
 // to DomMaker
@@ -85,9 +84,6 @@ DomMaker.prototype.newElement = function (elementType, propertiesObj) {
 DomMaker.prototype.appendElement = function (element, parent, options) {
   // if true -> append to the default element (cards)
   if (options.doMount === true) {
-    // find the cardMountpoint. Skip the search if property set
-    this.cardMountpoint = this.cardMountpoint ?? this.rootElement.querySelector('.card-mountpoint');
-
     this.cardMountpoint.appendChild(element);
   } else if (
     typeof parent === 'object' &&
@@ -142,12 +138,8 @@ DomMaker.prototype.generateDom = function () {
   });
 };
 
-const CardMaker = function (rootElement, cardArray, options) {
-  DomMaker.call(this, rootElement, cardArray);
-
+const CardMaker = function () {
   this.cardMountpoint = document.querySelector('.card-mountpoint');
-
-  if (!options?.isFirstInstance) return this; // new keyword returns this by default, simulate that
 
   this.cardMountpoint.addEventListener('click', e => {
     const cardElement = e.target.closest('.card');
@@ -369,23 +361,19 @@ CardMaker.prototype.updateCard = function (card, newWord, newExample, newDefinit
   this.generateSmallCards().forEach(card => previewCardContainer.append(card));
 };
 
-const ModalMaker = function (rootElement, cardArray, options) {
-  DomMaker.call(this, rootElement, cardArray);
-
+const ModalMaker = function () {
   // create eventListeners for buttons
-  const addBtn = rootElement.querySelector('.btn.options__add-btn');
+  const addBtn = this.rootElement.querySelector('.btn.options__add-btn');
   addBtn.addEventListener('click', this.newCardModal.bind(this));
 
-  const modifyBtn = rootElement.querySelector('.btn.options__modify-btn');
+  const modifyBtn = this.rootElement.querySelector('.btn.options__modify-btn');
   modifyBtn.addEventListener('click', this.modifyModal.bind(this));
 
-  const settingsBtn = rootElement.querySelector('.btn.options__settings-btn');
+  const settingsBtn = this.rootElement.querySelector('.btn.options__settings-btn');
   settingsBtn.addEventListener('click', this.settingsModal.bind(this));
 
-  if (!options?.isFirstInstance) return this;
-
-  // working on the first instance only
-  this.auxiliaryCardMaker = new CardMaker(rootElement, cardArray); // periodically used by modals
+  // this flag tracks the state of the children of main element
+  this.isEachChildDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
 };
 ModalMaker.prototype = Object.create(DomMaker.prototype);
 ModalMaker.prototype.constructor = ModalMaker;
@@ -434,8 +422,6 @@ ModalMaker.prototype.toggleDisableAndBlur = function () {
 };
 
 ModalMaker.prototype.generateForm = function (parentElement, options) {
-  const cardMaker = new CardMaker(this.rootElement, this.cardArray); // this function uses the CardMaker object to generate preview
-
   const createLabel = labelText => {
     const textField = this.newElement('input', {
       type: 'text',
@@ -505,10 +491,10 @@ ModalMaker.prototype.generateForm = function (parentElement, options) {
     parentElement: formContainer,
     click: () => {
       options.doMakeNew
-        ? cardMaker.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
+        ? this.cardMaker.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
             doMount: true,
           })
-        : cardMaker.updateCard(
+        : this.cardMaker.updateCard(
             options.card,
             wordInput.value,
             exampleInput.value,
@@ -531,13 +517,11 @@ ModalMaker.prototype.newCardModal = function () {
 };
 
 ModalMaker.prototype.modifyModal = function () {
-  const cardMaker = new CardMaker(this.rootElement, this.cardArray); // this function uses it to generate preview
-
   const modalContent = this.newModal(document.body, {
     title: 'modify a card',
   });
   // create an array of the cards with additional functionalities
-  const previewCardArray = cardMaker.generateSmallCards();
+  const previewCardArray = this.cardMaker.generateSmallCards();
 
   // prepend all of those items here - so they are at the top of the modal
   this.previewCardContainer = this.newElement('div', {
@@ -584,8 +568,6 @@ ModalMaker.prototype.modifyModal = function () {
 };
 
 ModalMaker.prototype.settingsModal = function () {
-  const cardMaker = new CardMaker(this.rootElement, this.cardArray);
-
   const modalContent = this.newModal(document.body, {
     title: 'settings',
   });
@@ -685,7 +667,7 @@ ModalMaker.prototype.settingsModal = function () {
 };
 
 ModalMaker.prototype.generatePreviewCard = function (options) {
-  return this.auxiliaryCardMaker.newCard(
+  return this.cardMaker.newCard(
     options?.word ?? 'word',
     options?.example ?? 'example',
     options?.definition ?? 'definition',
@@ -700,13 +682,11 @@ ModalMaker.prototype.generatePreviewCard = function (options) {
 const root = document.querySelector('.root-element');
 const cardArray = [];
 
-const domMaker = new DomMaker(root, cardArray);
-const cardMaker = new CardMaker(root, cardArray, { isFirstInstance: true });
-const modalMaker = new ModalMaker(root, cardArray, { isFirstInstance: true });
+const maker = new DomMaker(root, cardArray);
 
 function generateCards(num) {
   for (let i = 0; i < num; i++)
-    cardMaker.newCard(`word${i}`, 'example', 'definition', { doMount: true });
+    maker.cardMaker.newCard(`word${i}`, 'example', 'definition', { doMount: true });
 }
 
 generateCards(7);
