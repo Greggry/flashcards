@@ -50,11 +50,7 @@ class DomMaker {
     keys.forEach(key => {
       // accepts only string with exceptions
       const allowedKeys = ['style', 'draggable'];
-      if (
-        (typeof propertiesObj[key] !== 'string' && !allowedKeys.includes(key)) ||
-        key === 'content'
-      )
-        return; // same as 'continue' in a for loop
+      if ((typeof propertiesObj[key] !== 'string' && !allowedKeys.includes(key)) || key === 'content') return; // same as 'continue' in a for loop
 
       // check to assign styles
       if (key === 'style') {
@@ -79,8 +75,7 @@ class DomMaker {
       );
 
     // specified an event listener -> add it
-    if (propertiesObj.hasOwnProperty('click'))
-      element.addEventListener('click', propertiesObj['click']);
+    if (propertiesObj.hasOwnProperty('click')) element.addEventListener('click', propertiesObj['click']);
 
     return element;
   }
@@ -290,9 +285,7 @@ class CardMaker extends DomMaker {
 
       card.addEventListener('dragstart', () => {
         card.classList.add('dragging');
-        previewCardArray.forEach(el =>
-          el.querySelector('.card--small__btn-delete')?.classList.add('hidden')
-        );
+        previewCardArray.forEach(el => el.querySelector('.card--small__btn-delete')?.classList.add('hidden'));
       });
 
       card.addEventListener('dragend', e => {
@@ -369,6 +362,19 @@ class CardMaker extends DomMaker {
     previewCardContainer.innerHTML = '';
     this.generateSmallCards().forEach(card => previewCardContainer.append(card));
   }
+
+  generatePreviewCard(options) {
+    return this.newCard(
+      options?.word ?? 'word',
+      options?.example ?? 'example',
+      options?.definition ?? 'definition',
+      {
+        doRerender: true, // force to skip adding to the card array
+        renderSide: options.renderSide,
+        parentElement: options?.parentElement,
+      }
+    );
+  }
 }
 
 class ModalMaker extends DomMaker {
@@ -377,7 +383,7 @@ class ModalMaker extends DomMaker {
 
     // create eventListeners for buttons
     const addBtn = this.rootElement.querySelector('.btn.options__add-btn');
-    addBtn.addEventListener('click', this.newCardModal.bind(this));
+    addBtn.addEventListener('click', this.addCardModal.bind(this));
 
     const modifyBtn = this.rootElement.querySelector('.btn.options__modify-btn');
     modifyBtn.addEventListener('click', this.modifyModal.bind(this));
@@ -471,12 +477,15 @@ class ModalMaker extends DomMaker {
     const previewCards = this.newElement('div', {
       class: 'form-container__preview-cards',
       content: [
-        this.generatePreviewCard({
+        this.cardMaker.generatePreviewCard({
           word: options?.card?.word,
           example: options?.card?.example,
           renderSide: 'front',
         }),
-        this.generatePreviewCard({ definition: options?.card?.definition, renderSide: 'back' }),
+        this.cardMaker.generatePreviewCard({
+          definition: options?.card?.definition,
+          renderSide: 'back',
+        }),
       ],
       parentElement: formContainer,
     });
@@ -485,14 +494,17 @@ class ModalMaker extends DomMaker {
       previewCards.innerHTML = '';
 
       previewCards.append(
-        this.generatePreviewCard({
+        this.cardMaker.generatePreviewCard({
           word: wordInput.value,
           example: exampleInput.value,
           renderSide: 'front',
         })
       );
       previewCards.append(
-        this.generatePreviewCard({ definition: definitionInput.value, renderSide: 'back' })
+        this.cardMaker.generatePreviewCard({
+          definition: definitionInput.value,
+          renderSide: 'back',
+        })
       );
     });
 
@@ -517,7 +529,7 @@ class ModalMaker extends DomMaker {
     return [wordInput, exampleInput, definitionInput];
   }
 
-  newCardModal() {
+  addCardModal() {
     const modalContent = this.newModal(document.body, {
       title: 'add a new card',
     });
@@ -634,20 +646,30 @@ class ModalMaker extends DomMaker {
       ];
     }
 
+    const inlineCss = document.documentElement.style.cssText;
+
     this.colorSchemes.forEach(colorScheme => {
-      const label = generateColorSchemeLabel(colorScheme[0], colorScheme[1]);
+      const [foreground, background] = colorScheme;
+
+      const label = generateColorSchemeLabel(foreground, background);
       labelContainer.append(label);
 
-      // default colour scheme
-      if (JSON.stringify(colorScheme) === JSON.stringify(defaultColorScheme))
+      // colour scheme not chosen - we stringify the arrays to make a comparison for the same elements
+      if (!inlineCss && JSON.stringify(colorScheme) === JSON.stringify(defaultColorScheme)) {
+        label.classList.add('color-label--active');
+        return; // nothing to do now
+      }
+
+      // colour scheme has been chosen - add the active class only if generated inline css matches
+      if (inlineCss.includes(`--cardForegroundColor:${foreground}; --cardBackgroundColor:${background};`))
         label.classList.add('color-label--active');
     });
 
     const exampleCards = this.newElement('div', {
       class: 'preview-cards',
       content: [
-        this.generatePreviewCard({ renderSide: 'front' }),
-        this.generatePreviewCard({ renderSide: 'back' }),
+        this.cardMaker.generatePreviewCard({ renderSide: 'front' }),
+        this.cardMaker.generatePreviewCard({ renderSide: 'back' }),
       ],
       parentElement: colorSchemesContainer,
     });
@@ -657,37 +679,18 @@ class ModalMaker extends DomMaker {
 
       if (!colorLabel) return; // button not found
 
-      const [primaryColorElement, secondaryColorElement] = colorLabel.querySelectorAll(
-        '.color-label__color-tile'
-      );
+      const [primaryColorElement, secondaryColorElement] =
+        colorLabel.querySelectorAll('.color-label__color-tile');
 
-      document.documentElement.style.setProperty(
-        '--cardForegroundColor',
-        primaryColorElement.dataset.color
-      );
+      document.documentElement.style.setProperty('--cardForegroundColor', primaryColorElement.dataset.color);
       document.documentElement.style.setProperty(
         '--cardBackgroundColor',
         secondaryColorElement.dataset.color
       );
 
-      [...colorLabel.parentElement.children].forEach(child =>
-        child.classList.remove('color-label--active')
-      );
+      [...colorLabel.parentElement.children].forEach(child => child.classList.remove('color-label--active'));
       colorLabel.classList.add('color-label--active');
     });
-  }
-
-  generatePreviewCard(options) {
-    return this.cardMaker.newCard(
-      options?.word ?? 'word',
-      options?.example ?? 'example',
-      options?.definition ?? 'definition',
-      {
-        doRerender: true, // force to skip adding to the card array
-        renderSide: options.renderSide,
-        parentElement: options?.parentElement,
-      }
-    );
   }
 }
 
