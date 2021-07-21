@@ -36,12 +36,8 @@ body {
 }
 
 .root-element {
-  display: grid;
-  grid-template-columns: calc(20rem + 15px) auto;
-
-  // force to take up the whole screen
-  width: 100vw;
-  max-width: 100%;
+  width: 100vw - calc(20rem + 15px);
+  margin-left: calc(20rem + 15px); // for .side-pane
 
   height: 100vh;
 
@@ -51,6 +47,10 @@ body {
     background-color: $auxiliary1;
     padding: 15px;
     text-align: center;
+
+    position: fixed;
+    top: 0;
+    left: 0;
 
     &__title {
       font-size: 3rem;

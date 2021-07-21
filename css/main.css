@@ -22,10 +22,8 @@ body {
 }
 
 .root-element {
-  display: grid;
-  grid-template-columns: calc(20rem + 15px) auto;
-  width: 100vw;
-  max-width: 100%;
+  width: 100vw-calc(20rem + 15px);
+  margin-left: calc(20rem + 15px);
   height: 100vh;
 }
 .root-element .side-pane {
@@ -34,6 +32,9 @@ body {
   background-color: #161412;
   padding: 15px;
   text-align: center;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 .root-element .side-pane__title {
   font-size: 3rem;
