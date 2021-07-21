@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.1 - 2021-07-21
+
+<hr />
+
+### Added:
+
+- more unique ids for cards
+- data encapsulation
+- animated modals
+
+### Modified:
+
+- variable names to more descriptive ones
+- side pane does not disappear when user scrolls down (it's position is fixed)
+
 ## 0.2.0 - 2021-07-14
 
 <hr />
