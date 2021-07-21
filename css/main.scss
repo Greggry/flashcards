@@ -169,13 +169,26 @@ body {
   font-size: 2rem;
   border-radius: 5px;
 
+  animation-duration: 0.2s;
+  animation-name: fadein;
+  animation-iteration-count: 1;
+
+  @keyframes fadein {
+    from {
+      opacity: 0.2;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
   &__title {
     margin-bottom: 20px;
 
     h1 {
       font-size: 2rem;
       height: 4rem;
-      display: inline; // to remove the empty space created by browsers
+      display: inline; // remove the empty space created by browsers
       text-transform: capitalize;
     }
   }
@@ -260,7 +273,7 @@ body {
 
       &:hover {
         cursor: pointer;
-        opacity: 0.8; // works for just the color tile?
+        opacity: 0.8;
         background-color: $primary-darker;
       }
 
