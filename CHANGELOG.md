@@ -13,7 +13,6 @@
 ### Modified:
 
 - variable names to more descriptive ones
-- side pane does not disappear when user scrolls down (it's position is fixed)
 
 ## 0.2.0 - 2021-07-14
 
