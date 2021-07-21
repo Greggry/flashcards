@@ -7,7 +7,7 @@ class DomMaker {
     this.constructor.prototype.rootElement = rootElement;
     this.constructor.prototype.cardArray = cardArray;
 
-    this.generateDom();
+    this.#generateDom();
 
     this.constructor.prototype.cardMaker = new CardMaker();
     this.constructor.prototype.modalMaker = new ModalMaker();
@@ -94,7 +94,7 @@ class DomMaker {
       else parent.appendChild(element);
   }
 
-  generateDom() {
+  #generateDom() {
     // generateSidePane
     (() => {
       const sidePaneRoot = this.newElement('div', {
@@ -275,7 +275,7 @@ class CardMaker extends DomMaker {
           // remove preview card
           cardElement.remove();
 
-          this.refreshCards(this.cardMountpoint);
+          this.rerenderCardContainer();
         },
       });
     });
@@ -304,7 +304,7 @@ class CardMaker extends DomMaker {
           this.cardArray.push(arrayDragged);
 
           // refresh the main container
-          this.refreshCards();
+          this.rerenderCardContainer();
 
           return;
         }
@@ -322,17 +322,15 @@ class CardMaker extends DomMaker {
         this.cardArray.splice(this.cardArray.indexOf(arrayNext), 0, arrayDragged); // insert the dragged item before arrayNext
 
         // remount the main card container's cards
-        this.refreshCards();
+        this.rerenderCardContainer();
       });
     });
 
     return previewCardArray;
   }
 
-  refreshCards(mountpoint) {
-    // remove items from the mountpoint
-
-    if (!mountpoint) mountpoint = this.rootElement.querySelector('.card-mountpoint');
+  rerenderCardContainer() {
+    const mountpoint = this.rootElement.querySelector('.card-mountpoint');
 
     mountpoint.innerHTML = '';
 
@@ -346,6 +344,7 @@ class CardMaker extends DomMaker {
     });
   }
 
+  // modifies a card
   updateCard(card, newWord, newExample, newDefinition) {
     if (!card) return;
 
@@ -354,7 +353,7 @@ class CardMaker extends DomMaker {
     card.definition = newDefinition;
 
     // remount the main card container
-    this.refreshCards();
+    this.rerenderCardContainer();
 
     // remount the preview (small) cards
     const previewCardContainer = document.querySelector('.modal__preview-container');
@@ -383,20 +382,20 @@ class ModalMaker extends DomMaker {
 
     // create eventListeners for buttons
     const addBtn = this.rootElement.querySelector('.btn.options__add-btn');
-    addBtn.addEventListener('click', this.addCardModal.bind(this));
+    addBtn.addEventListener('click', this.generateAddCardModal.bind(this));
 
     const modifyBtn = this.rootElement.querySelector('.btn.options__modify-btn');
-    modifyBtn.addEventListener('click', this.modifyModal.bind(this));
+    modifyBtn.addEventListener('click', this.generateModifyModal.bind(this));
 
     const settingsBtn = this.rootElement.querySelector('.btn.options__settings-btn');
-    settingsBtn.addEventListener('click', this.settingsModal.bind(this));
+    settingsBtn.addEventListener('click', this.generateSettingsModal.bind(this));
 
     // this flag tracks the state of the children of main element
     this.isEachChildDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
   }
 
   newModal(parent, options) {
-    this.toggleDisableAndBlur(this.rootElement);
+    this.#toggleDisableAndBlur(this.rootElement);
 
     const title = this.newElement('div', {
       content: [`<h1>${options?.title ?? 'Modal Title'}</h1>`, '<hr />'],
@@ -412,7 +411,7 @@ class ModalMaker extends DomMaker {
       content: 'exit',
       class: 'modal__btn',
       click: () => {
-        this.toggleDisableAndBlur();
+        this.#toggleDisableAndBlur();
         modal.remove();
       },
     });
@@ -426,7 +425,7 @@ class ModalMaker extends DomMaker {
     return modalContent;
   }
 
-  toggleDisableAndBlur() {
+  #toggleDisableAndBlur() {
     const childrenArray = this.rootElement.querySelectorAll('*');
 
     this.isEachChildDisabled = !this.isEachChildDisabled;
@@ -529,7 +528,7 @@ class ModalMaker extends DomMaker {
     return [wordInput, exampleInput, definitionInput];
   }
 
-  addCardModal() {
+  generateAddCardModal() {
     const modalContent = this.newModal(document.body, {
       title: 'add a new card',
     });
@@ -539,7 +538,7 @@ class ModalMaker extends DomMaker {
     });
   }
 
-  modifyModal() {
+  generateModifyModal() {
     const modalContent = this.newModal(document.body, {
       title: 'modify a card',
     });
@@ -590,7 +589,7 @@ class ModalMaker extends DomMaker {
     });
   }
 
-  settingsModal() {
+  generateSettingsModal() {
     const modalContent = this.newModal(document.body, {
       title: 'settings',
     });
