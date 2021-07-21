@@ -139,6 +139,8 @@ class DomMaker {
 }
 
 class CardMaker extends DomMaker {
+  #cardIdSuffix = 0; // it will increment for each new card created
+
   constructor() {
     super();
 
@@ -180,9 +182,16 @@ class CardMaker extends DomMaker {
   }
 
   newCard(word, example, definition, options = {}) {
-    const id = options.id // if we set an id before (doRerender)
-      ? options.id
-      : `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    let id = null;
+
+    if (!options.id) {
+      // id provided - generate one
+      const suffix = String(this.#cardIdSuffix).padStart(2, '0'); // padded suffix (0-99)
+
+      id = `${Date.now()}${suffix}`;
+
+      if (++this.#cardIdSuffix >= 100) this.#cardIdSuffix = 0; // reset for >99
+    } else id = options.id;
 
     const cardOptions = {
       class: 'card',
@@ -703,4 +712,4 @@ function generateCards(num) {
     maker.cardMaker.newCard(`word${i}`, 'example', 'definition', { doMount: true });
 }
 
-generateCards(7);
+generateCards(100);
