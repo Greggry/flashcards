@@ -6,6 +6,8 @@ class DomMaker {
     // the rootElement will be the parent of everything (but modals)
     this.constructor.prototype.rootElement = rootElement;
     this.constructor.prototype.cardArray = cardArray;
+    // this flag tracks the state of the children of main element
+    this.constructor.prototype.isEachChildDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
 
     this.#generateDom();
 
@@ -95,6 +97,18 @@ class DomMaker {
       else parent.appendChild(element);
   }
 
+  toggleDisableAndBlur() {
+    const cardElements = this.rootElement.querySelectorAll('*'); // text elements cannot be disabled, not reliable when flipping cards
+
+    DomMaker.isEachChildDisabled = !DomMaker.isEachChildDisabled; // used to control card flipping and such
+
+    cardElements.forEach(card => {
+      card.disabled = DomMaker.isEachChildDisabled; // first it will disable the cards then enable and so on
+    });
+
+    this.rootElement.classList.toggle('blurred');
+  }
+
   #generateDom() {
     // generateSidePane
     (() => {
@@ -148,8 +162,9 @@ class CardMaker extends DomMaker {
     this.cardMountpoint = document.querySelector('.card-mountpoint');
 
     this.cardMountpoint.addEventListener('click', e => {
-      const cardElement = e.target.closest('.card');
+      if (DomMaker.isEachChildDisabled) return; // stuff is disabled
 
+      const cardElement = e.target.closest('.card');
       if (!cardElement) return; // no card was clicked
 
       const cardObject = this.cardArray.find(card => card.id === cardElement?.dataset.id);
@@ -286,9 +301,9 @@ class CardMaker extends DomMaker {
           cardElement.remove();
 
           // TODO undo functionality?
-          this.alertMaker.newAlert(`card deleted: ${cardObject.word}`);
+          this.alertMaker.newAlert(`Card deleted: ${cardObject.word}`);
 
-          this.rerenderCardContainer(); // TODO: needed? remove that if not
+          this.rerenderCardContainer(); // flips to initial state
         },
       });
     });
@@ -402,13 +417,10 @@ class ModalMaker extends DomMaker {
 
     const settingsBtn = this.rootElement.querySelector('.btn.options__settings-btn');
     settingsBtn.addEventListener('click', this.generateSettingsModal.bind(this));
-
-    // this flag tracks the state of the children of main element
-    this.isEachChildDisabled = false; // the flag changes state, so first it will disable elements, then it will switch
   }
 
   newModal(parent, options) {
-    this.#toggleDisableAndBlur(this.rootElement);
+    this.toggleDisableAndBlur(this.rootElement);
 
     const title = this.newElement('div', {
       content: [`<h1>${options?.title ?? 'Modal Title'}</h1>`, '<hr />'],
@@ -424,7 +436,7 @@ class ModalMaker extends DomMaker {
       content: 'exit',
       class: 'modal__btn',
       click: () => {
-        this.#toggleDisableAndBlur();
+        this.toggleDisableAndBlur();
         modal.remove();
       },
     });
@@ -436,18 +448,6 @@ class ModalMaker extends DomMaker {
     this.appendElement(modal, parent, { doMount: options?.doMount });
 
     return modalContent;
-  }
-
-  #toggleDisableAndBlur() {
-    const childrenArray = this.rootElement.querySelectorAll('*');
-
-    this.isEachChildDisabled = !this.isEachChildDisabled;
-
-    childrenArray.forEach(child => {
-      child.disabled = this.isEachChildDisabled; // first it will disable the children then enable and so on
-    });
-
-    this.rootElement.classList.toggle('blurred');
   }
 
   generateForm(parentElement, options) {
@@ -774,5 +774,5 @@ function generateCards(num) {
 
 generateCards(10);
 
-// BUG - background is not disabled when a modal is active
+// BUG - background gets enabled when a modal is active and a notification shows up (reproduce: delete a card) (only when deleting a card)
 // BUG - the option sidepane is misaligned when a modal is active
