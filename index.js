@@ -100,10 +100,10 @@ class DomMaker {
   toggleDisableAndBlur() {
     const cardElements = this.rootElement.querySelectorAll('*'); // text elements cannot be disabled, not reliable when flipping cards
 
-    DomMaker.isEachChildDisabled = !DomMaker.isEachChildDisabled; // used to control card flipping and such
+    DomMaker.prototype.isEachChildDisabled = !DomMaker.prototype.isEachChildDisabled; // used to control card flipping and such
 
     cardElements.forEach(card => {
-      card.disabled = DomMaker.isEachChildDisabled; // first it will disable the cards then enable and so on
+      card.disabled = DomMaker.prototype.isEachChildDisabled; // first it will disable the cards then enable and so on
     });
 
     this.rootElement.classList.toggle('blurred');
@@ -169,7 +169,7 @@ class CardMaker extends DomMaker {
     this.cardMountpoint = document.querySelector('.card-mountpoint');
 
     this.cardMountpoint.addEventListener('click', e => {
-      if (DomMaker.isEachChildDisabled) return; // stuff is disabled
+      if (DomMaker.prototype.isEachChildDisabled) return; // stuff is disabled
 
       const cardElement = e.target.closest('.card');
       if (!cardElement) return; // no card was clicked
@@ -780,5 +780,3 @@ function generateCards(num) {
 }
 
 generateCards(10);
-
-// BUG - background gets enabled when a modal is active and a notification shows up (reproduce: delete a card) (only when deleting a card)
