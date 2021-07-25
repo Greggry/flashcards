@@ -702,6 +702,79 @@ class ModalMaker extends DomMaker {
   }
 }
 
+class AlertMaker extends DomMaker {
+  constructor(parentElement) {
+    super();
+
+    // alert mount place
+    this.alertContainer = this.newElement('div', {
+      class: 'alert-container',
+      parentElement: parentElement,
+    });
+    this.alertArray = []; // alert DOM elements go there
+
+    this.DEFAULT_TIMEOUT_MS = 5000;
+
+    // test TODO: remove
+    setTimeout(() => {
+      this.newAlert('alert 1');
+      setTimeout(() => {
+        this.newAlert('alert 2');
+        setTimeout(() => {
+          this.newAlert('alert 3');
+          setTimeout(() => {
+            this.newAlert('alert 4');
+          }, 1000);
+        }, 1000);
+      }, 1000);
+    }, 1000);
+  }
+
+  newAlert(content, removeAfterMs = this.DEFAULT_TIMEOUT_MS) {
+    const alert = this.newElement('div', {
+      content: content,
+      class: 'alert',
+      parentElement: this.alertContainer,
+    });
+
+    const removeButton = this.newElement('button', {
+      class: 'alert__btn-remove',
+
+      parentElement: alert,
+      click: e => {
+        this.removeAlert(e.target.closest('.alert'), { doSkipFadeout: true });
+      },
+    });
+
+    this.alertArray.push(alert);
+
+    setTimeout(() => {
+      this.removeAlert(alert);
+    }, removeAfterMs); // miliseconds
+  }
+
+  removeAlert(alert, options) {
+    // remove from alerts array
+    const itemInArray = this.alertArray.find(item => item === alert);
+    this.alertArray.splice(this.cardArray.indexOf(itemInArray), 1);
+
+    if (options?.doSkipFadeout === true) {
+      alert.remove();
+      return;
+    }
+
+    // transition class
+    alert.classList.add('fadeout');
+
+    // remove from DOM after the fadeout
+    alert.addEventListener('transitionend', () => {
+      alert.remove();
+    });
+  }
+}
+
+const alert = new AlertMaker(document.body);
+
 const root = document.querySelector('.root-element');
 const cardArray = [];
 
@@ -712,4 +785,4 @@ function generateCards(num) {
     maker.cardMaker.newCard(`word${i}`, 'example', 'definition', { doMount: true });
 }
 
-generateCards(100);
+generateCards(10);

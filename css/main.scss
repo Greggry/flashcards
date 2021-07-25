@@ -12,6 +12,8 @@ $defaultBackground: '#d8d8d8';
 $cardWidth: 18rem;
 $cardHeight: 24rem;
 
+$alertHeight: 2.5rem;
+
 :root {
   // variables which user can change - like that by default
   --cardForegroundColor: #{$defaultForeground};
@@ -309,4 +311,66 @@ body {
 
 .blurred {
   filter: blur(8px);
+}
+
+.alert-container {
+  position: fixed;
+  top: 20px;
+  left: 15%; /* center */
+  width: 70%; /* take 70% of the screen's width */
+  display: flex;
+  flex-direction: column;
+}
+
+.alert {
+  border: 3px solid $warning;
+  background-color: $primary;
+  color: $secondary;
+
+  margin-top: 20px;
+
+  width: 100%;
+  height: 2.5rem;
+  font-size: 1.5rem;
+  border-radius: 5px;
+
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 1; /* always on top */
+
+  &.fadeout {
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  &__btn-remove {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 2rem;
+
+    border: none; // reset border
+    border-left: 2px solid $warning;
+
+    color: $warning;
+    background-color: $primary;
+
+    width: 2rem;
+    height: 2rem;
+
+    margin: 0;
+
+    // square
+    position: absolute;
+    right: 0;
+
+    &::after {
+      content: '×';
+    }
+  }
 }
