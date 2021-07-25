@@ -11,6 +11,7 @@ class DomMaker {
 
     this.constructor.prototype.cardMaker = new CardMaker();
     this.constructor.prototype.modalMaker = new ModalMaker();
+    this.constructor.prototype.alertMaker = new AlertMaker(document.body);
   }
 
   newElement(elementType, propertiesObj) {
@@ -284,7 +285,10 @@ class CardMaker extends DomMaker {
           // remove preview card
           cardElement.remove();
 
-          this.rerenderCardContainer();
+          // TODO undo functionality?
+          this.alertMaker.newAlert(`card deleted: ${cardObject.word}`);
+
+          this.rerenderCardContainer(); // TODO: needed? remove that if not
         },
       });
     });
@@ -521,16 +525,15 @@ class ModalMaker extends DomMaker {
       class: 'modal__btn',
       parentElement: formContainer,
       click: () => {
-        options.doMakeNew
-          ? this.cardMaker.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
-              doMount: true,
-            })
-          : this.cardMaker.updateCard(
-              options.card,
-              wordInput.value,
-              exampleInput.value,
-              definitionInput.value
-            );
+        if (options.doMakeNew === true) {
+          this.cardMaker.newCard(wordInput.value, exampleInput.value, definitionInput.value, {
+            doMount: true,
+          });
+          this.alertMaker.newAlert(`Card created: ${wordInput.value}`);
+        } else {
+          this.cardMaker.updateCard(options.card, wordInput.value, exampleInput.value, definitionInput.value);
+          this.alertMaker.newAlert(`Card updated: ${wordInput.value}`);
+        }
       },
     });
 
@@ -714,20 +717,6 @@ class AlertMaker extends DomMaker {
     this.alertArray = []; // alert DOM elements go there
 
     this.DEFAULT_TIMEOUT_MS = 5000;
-
-    // test TODO: remove
-    setTimeout(() => {
-      this.newAlert('alert 1');
-      setTimeout(() => {
-        this.newAlert('alert 2');
-        setTimeout(() => {
-          this.newAlert('alert 3');
-          setTimeout(() => {
-            this.newAlert('alert 4');
-          }, 1000);
-        }, 1000);
-      }, 1000);
-    }, 1000);
   }
 
   newAlert(content, removeAfterMs = this.DEFAULT_TIMEOUT_MS) {
@@ -773,8 +762,6 @@ class AlertMaker extends DomMaker {
   }
 }
 
-const alert = new AlertMaker(document.body);
-
 const root = document.querySelector('.root-element');
 const cardArray = [];
 
@@ -786,3 +773,6 @@ function generateCards(num) {
 }
 
 generateCards(10);
+
+// BUG - background is not disabled when a modal is active
+// BUG - the option sidepane is misaligned when a modal is active
