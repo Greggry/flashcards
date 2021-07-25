@@ -39,7 +39,7 @@ body {
 
 .root-element {
   display: grid;
-  grid-template-columns: calc(20rem + 15px) auto;
+  grid-template-columns: 22rem auto;
 
   height: 100vh;
 
@@ -49,21 +49,26 @@ body {
     padding: 15px;
     text-align: center;
 
-    &__title {
-      font-size: 3rem;
-    }
+    &__options {
+      position: fixed;
+      width: 22rem;
+      left: 0px;
 
-    &__options .btn {
-      background-color: $secondary;
-      color: $primary;
-      border: 2px solid $primary;
-      width: 90%;
-      padding: 5px 10px;
-      margin: 10px 0;
-      font-size: 1.3rem;
-      cursor: pointer;
-    }
+      & .btn {
+        background-color: $secondary;
+        color: $primary;
+        border: 2px solid $primary;
+        width: 90%;
+        padding: 5px 10px;
+        margin: 10px 0;
+        font-size: 1.3rem;
+        cursor: pointer;
+      }
 
+      & .options__title {
+        font-size: 3rem;
+      }
+    }
     .btn:disabled {
       cursor: default;
     }

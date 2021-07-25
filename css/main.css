@@ -23,7 +23,7 @@ body {
 
 .root-element {
   display: grid;
-  grid-template-columns: calc(20rem + 15px) auto;
+  grid-template-columns: 22rem auto;
   height: 100vh;
 }
 .root-element .side-pane {
@@ -32,8 +32,10 @@ body {
   padding: 15px;
   text-align: center;
 }
-.root-element .side-pane__title {
-  font-size: 3rem;
+.root-element .side-pane__options {
+  position: fixed;
+  width: 22rem;
+  left: 0px;
 }
 .root-element .side-pane__options .btn {
   background-color: #1e1b19;
@@ -44,6 +46,9 @@ body {
   margin: 10px 0;
   font-size: 1.3rem;
   cursor: pointer;
+}
+.root-element .side-pane__options .options__title {
+  font-size: 3rem;
 }
 .root-element .side-pane .btn:disabled {
   cursor: default;

@@ -118,31 +118,38 @@ class DomMaker {
         doPrepend: true, // it needs to be first in the dom
       });
 
-      const title = this.newElement('h1', {
-        parentElement: sidePaneRoot,
-        content: 'options',
-        class: 'side-pane__title',
-      });
-
-      const options = this.newElement('div', {
+      const sidePaneContents = this.newElement('div', {
         parentElement: sidePaneRoot,
         class: 'side-pane__options',
       });
 
+      const title = this.newElement('h1', {
+        parentElement: sidePaneContents,
+        content: 'options',
+        class: 'options__title',
+      });
+
+      const buttons = this.newElement('div', {
+        parentElement: sidePaneContents,
+        // class: 'side-pane__options',
+        class: 'options__buttons',
+      });
+
       const addButton = this.newElement('button', {
         content: 'new',
-        class: 'btn options__add-btn',
-        parentElement: options,
+        // class: 'btn options__add-btn',
+        class: 'btn buttons__add-btn',
+        parentElement: buttons,
       });
       const modifyBtn = this.newElement('button', {
         content: 'modify',
-        class: 'btn options__modify-btn',
-        parentElement: options,
+        class: 'btn buttons__modify-btn',
+        parentElement: buttons,
       });
       const settingsBtn = this.newElement('button', {
         content: 'settings',
-        class: 'btn options__settings-btn',
-        parentElement: options,
+        class: 'btn buttons__settings-btn',
+        parentElement: buttons,
       });
     })();
 
@@ -409,13 +416,13 @@ class ModalMaker extends DomMaker {
     super();
 
     // create eventListeners for buttons
-    const addBtn = this.rootElement.querySelector('.btn.options__add-btn');
+    const addBtn = this.rootElement.querySelector('.btn.buttons__add-btn');
     addBtn.addEventListener('click', this.generateAddCardModal.bind(this));
 
-    const modifyBtn = this.rootElement.querySelector('.btn.options__modify-btn');
+    const modifyBtn = this.rootElement.querySelector('.btn.buttons__modify-btn');
     modifyBtn.addEventListener('click', this.generateModifyModal.bind(this));
 
-    const settingsBtn = this.rootElement.querySelector('.btn.options__settings-btn');
+    const settingsBtn = this.rootElement.querySelector('.btn.buttons__settings-btn');
     settingsBtn.addEventListener('click', this.generateSettingsModal.bind(this));
   }
 
@@ -775,4 +782,3 @@ function generateCards(num) {
 generateCards(10);
 
 // BUG - background gets enabled when a modal is active and a notification shows up (reproduce: delete a card) (only when deleting a card)
-// BUG - the option sidepane is misaligned when a modal is active
