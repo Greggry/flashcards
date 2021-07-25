@@ -269,6 +269,13 @@ class CardMaker extends DomMaker {
     return card;
   }
 
+  remountSmallCards() {
+    const previewCardContainer = document.querySelector('.modal__preview-container');
+
+    previewCardContainer.innerHTML = '';
+    this.generateSmallCards().forEach(card => previewCardContainer.append(card));
+  }
+
   generateSmallCards() {
     const previewCardArray = [];
 
@@ -296,10 +303,13 @@ class CardMaker extends DomMaker {
         class: 'card--small__btn-delete',
         parentElement: cardElement,
         click: () => {
+          let indexInArray;
+
           // remove from cardArray
-          this.cardArray.includes(cardObject)
-            ? this.cardArray.splice(this.cardArray.indexOf(cardObject), 1)
-            : '';
+          if (this.cardArray.includes(cardObject)) {
+            indexInArray = this.cardArray.indexOf(cardObject);
+            this.cardArray.splice(indexInArray, 1);
+          }
 
           // if there are labels shown, remove them from the DOM
           cardElement.closest('.modal__content').querySelector('.form-container')?.remove();
@@ -307,10 +317,30 @@ class CardMaker extends DomMaker {
           // remove preview card
           cardElement.remove();
 
-          // TODO undo functionality?
-          this.alertMaker.newAlert(`Card deleted: ${cardObject.word}`);
+          let isAlreadyUndone = false;
 
-          this.rerenderCardContainer(); // flips to initial state
+          const undoButton = this.newElement('button', {
+            content: 'undo',
+            class: 'btn undo-btn',
+            parentElement: document.body,
+            click: e => {
+              // add the element back into the array
+              if (isAlreadyUndone) return;
+
+              // update dom
+              this.cardArray.splice(indexInArray, 0, cardObject);
+              this.rerenderCardContainer();
+              this.remountSmallCards();
+
+              isAlreadyUndone = true;
+
+              this.alertMaker.removeAlert(e.target.closest('.alert'));
+            },
+          });
+
+          this.alertMaker.newAlert([`Card deleted: ${cardObject.word}`, undoButton]);
+
+          this.rerenderCardContainer(); // reflect the changes in the main container
         },
       });
     });
@@ -346,7 +376,7 @@ class CardMaker extends DomMaker {
 
         // there is a next element
         const arrayNext = this.cardArray.find(
-          item => item.id === nextElement.querySelector('.card').dataset.id
+          item => item.id === nextElement.querySelector('.card')?.dataset.id // the querySelector result can be null here, in rare cases
         );
 
         // no change
@@ -391,10 +421,7 @@ class CardMaker extends DomMaker {
     this.rerenderCardContainer();
 
     // remount the preview (small) cards
-    const previewCardContainer = document.querySelector('.modal__preview-container');
-
-    previewCardContainer.innerHTML = '';
-    this.generateSmallCards().forEach(card => previewCardContainer.append(card));
+    this.remountSmallCards();
   }
 
   generatePreviewCard(options) {
