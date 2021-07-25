@@ -255,13 +255,15 @@ body {
 
 .alert-container {
   position: fixed;
-  top: 20px;
+  top: 15px;
   left: 15%;
   /* center */
   width: 70%;
   /* take 70% of the screen's width */
   display: flex;
   flex-direction: column;
+  z-index: 1;
+  /* always on top */
 }
 
 .alert {
@@ -277,8 +279,6 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1;
-  /* always on top */
 }
 .alert.fadeout {
   opacity: 0;
