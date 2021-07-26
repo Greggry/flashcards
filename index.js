@@ -32,8 +32,8 @@ class DomMaker {
         if (layer >= maxLayer || !content) return;
 
         if (typeof content === 'string')
-          // valid argument for innerHTML. += so it doesn't delete anything added previously
-          element.innerHTML += content;
+          // innerHTML += content makes a shallow copy
+          element.insertAdjacentHTML('beforeend', content);
         else if (typeof content === 'object' && typeof content.appendChild === 'function')
           // valid DOM node inside
           element.appendChild(content);
@@ -317,12 +317,11 @@ class CardMaker extends DomMaker {
           // remove preview card
           cardElement.remove();
 
-          let isAlreadyUndone = false;
+          let isAlreadyUndone = false; // BUG - when we close the modal and click undo
 
           const undoButton = this.newElement('button', {
             content: 'undo',
-            class: 'btn undo-btn',
-            parentElement: document.body,
+            class: 'btn btn-undo',
             click: e => {
               // add the element back into the array
               if (isAlreadyUndone) return;
@@ -338,7 +337,8 @@ class CardMaker extends DomMaker {
             },
           });
 
-          this.alertMaker.newAlert([`Card deleted: ${cardObject.word}`, undoButton]);
+          // undoButton - node cannot be found on the current page
+          this.alertMaker.newAlert([undoButton, `Card deleted: ${cardObject.word}`], 60000);
 
           this.rerenderCardContainer(); // reflect the changes in the main container
         },
