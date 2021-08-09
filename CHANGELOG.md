@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0 - 2021-08-09
+
+<hr />
+
+### Added:
+
+- alert functionality (+ an AlertMaker class)
+- card deletion undo functionality
+
+### Modified:
+
+- fixed the sidepane
+- fixed card flipping
+
 ## 0.2.1 - 2021-07-21
 
 <hr />
