@@ -162,12 +162,14 @@ class DomMaker {
 
 class CardMaker extends DomMaker {
   #cardIdSuffix = 0; // it will increment for each new card created
+  previousStatesArray = []; // will store deleted card states
 
   constructor() {
     super();
 
     this.cardMountpoint = document.querySelector('.card-mountpoint');
 
+    // card clicking
     this.cardMountpoint.addEventListener('click', e => {
       if (DomMaker.prototype.isEachChildDisabled) return; // stuff is disabled
 
@@ -208,10 +210,10 @@ class CardMaker extends DomMaker {
     let id = null;
 
     if (!options.id) {
-      // id provided - generate one
-      const suffix = String(this.#cardIdSuffix).padStart(2, '0'); // padded suffix (0-99)
+      // id not provided - generate one
+      const paddedSuffix = String(this.#cardIdSuffix).padStart(2, '0'); // padded suffix (0-99)
 
-      id = `${Date.now()}${suffix}`;
+      id = `${Date.now()}${paddedSuffix}`;
 
       if (++this.#cardIdSuffix >= 100) this.#cardIdSuffix = 0; // reset for >99
     } else id = options.id;
@@ -303,12 +305,14 @@ class CardMaker extends DomMaker {
         class: 'card--small__btn-delete',
         parentElement: cardElement,
         click: () => {
-          let indexInArray;
+          this.previousStatesArray.push({
+            cardArrayState: JSON.parse(JSON.stringify(this.cardArray)), // make a deep copy of the state before deletion
+          });
 
           // remove from cardArray
           if (this.cardArray.includes(cardObject)) {
-            indexInArray = this.cardArray.indexOf(cardObject);
-            this.cardArray.splice(indexInArray, 1);
+            const indexInCardArray = this.cardArray.indexOf(cardObject);
+            this.cardArray.splice(indexInCardArray, 1);
           }
 
           // if there are labels shown, remove them from the DOM
@@ -317,28 +321,47 @@ class CardMaker extends DomMaker {
           // remove preview card
           cardElement.remove();
 
-          let isAlreadyUndone = false; // BUG - when we close the modal and click undo
+          /*
+            the way undoing works:
+              1. deleting a card saves a state
+              2. when we click undo, this.cardArray is reassigned to the state object's cardArray
+          */
+
+          let isUndone = false; // for making sure the state is later removed from the previous card array
 
           const undoButton = this.newElement('button', {
             content: 'undo',
             class: 'btn btn-undo',
             click: e => {
-              // add the element back into the array
-              if (isAlreadyUndone) return;
+              const previousStateObject = this.previousStatesArray[this.previousStatesArray.length - 1];
+
+              // revert to the previous state
+              DomMaker.prototype.cardArray = previousStateObject.cardArrayState;
 
               // update dom
-              this.cardArray.splice(indexInArray, 0, cardObject);
               this.rerenderCardContainer();
-              this.remountSmallCards();
+              // if the modify modal is still open
+              if (this.modalMaker.isModalOpen && document.querySelector('.modal')) this.remountSmallCards();
 
-              isAlreadyUndone = true;
+              // remove from previousStatesArray
+              this.previousStatesArray.splice(this.previousStatesArray.indexOf(previousStateObject), 1);
+
+              isUndone = true;
 
               this.alertMaker.removeAlert(e.target.closest('.alert'));
             },
           });
 
-          // undoButton - node cannot be found on the current page
-          this.alertMaker.newAlert([undoButton, `Card deleted: ${cardObject.word}`], 60000);
+          const DELETE_ALERT_MS = 10000; // 10 seconds
+
+          this.alertMaker.removeAllAlerts();
+          this.alertMaker.newAlert([undoButton, `Card deleted: ${cardObject.word}`], DELETE_ALERT_MS);
+
+          setTimeout(() => {
+            if (!isUndone) {
+              this.previousStatesArray.shift(); // remove the first item representing the oldest state
+            }
+          }, DELETE_ALERT_MS);
 
           this.rerenderCardContainer(); // reflect the changes in the main container
         },
@@ -439,6 +462,8 @@ class CardMaker extends DomMaker {
 }
 
 class ModalMaker extends DomMaker {
+  isModalOpen = false;
+
   constructor() {
     super();
 
@@ -455,6 +480,7 @@ class ModalMaker extends DomMaker {
 
   newModal(parent, options) {
     this.toggleDisableAndBlur(this.rootElement);
+    this.isModalOpen = true;
 
     const title = this.newElement('div', {
       content: [`<h1>${options?.title ?? 'Modal Title'}</h1>`, '<hr />'],
@@ -471,6 +497,7 @@ class ModalMaker extends DomMaker {
       class: 'modal__btn',
       click: () => {
         this.toggleDisableAndBlur();
+        this.isModalOpen = false;
         modal.remove();
       },
     });
@@ -791,6 +818,12 @@ class AlertMaker extends DomMaker {
 
     // remove from DOM after the fadeout
     alert.addEventListener('transitionend', () => {
+      alert.remove();
+    });
+  }
+
+  removeAllAlerts() {
+    this.alertArray.forEach(alert => {
       alert.remove();
     });
   }
