@@ -286,16 +286,14 @@ body {
   transition: opacity 0.3s;
 }
 .alert .btn-undo {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   font-size: 1.3rem;
   font-weight: bold;
   border: none;
   height: 2rem;
-  border-left: 2px solid #b80c09;
   border-right: 2px solid #b80c09;
-  margin: 0 30px;
+  padding: 0 3rem;
+  position: absolute;
+  left: 0;
 }
 .alert__btn-remove {
   display: flex;

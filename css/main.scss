@@ -348,19 +348,18 @@ body {
   }
 
   & .btn-undo {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     font-size: 1.3rem;
     font-weight: bold;
 
     border: none; // reset border
     height: 2rem;
 
-    border-left: 2px solid $warning;
     border-right: 2px solid $warning;
 
-    margin: 0 30px;
+    padding: 0 3rem;
+
+    position: absolute;
+    left: 0;
   }
 
   &__btn-remove {
